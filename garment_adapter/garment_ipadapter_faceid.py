@@ -318,15 +318,19 @@ class IPAdapterFaceID:
 
         return images, cloth_mask_image
 
-
 class IPAdapterFaceIDPlus:
-    def __init__(self, sd_pipe, ref_path, image_encoder_path, ip_ckpt, device, enable_cloth_guidance, num_tokens=4, torch_dtype=torch.float16, set_seg_model=True):
+    def __init__(self, sd_pipe, ref_path, image_encoder_path, ip_ckpt, device, enable_cloth_guidance, num_tokens=4, torch_dtype=torch.float16, set_seg_model=True):       
+        
         self.enable_cloth_guidance = enable_cloth_guidance
         self.device = device
         self.image_encoder_path = image_encoder_path
         self.ip_ckpt = ip_ckpt
         self.num_tokens = num_tokens
-        self.torch_dtype = torch_dtype
+
+        if self.device == 'cpu':
+            self.torch_dtype = float
+        else: # gpu (cuda)
+            self.torch_dtype = torch_dtype
 
         self.pipe = sd_pipe.to(self.device)
         self.set_ip_adapter()
@@ -357,8 +361,12 @@ class IPAdapterFaceIDPlus:
         self.attn_store = {}
 
     def set_insightface(self):
-        self.app = FaceAnalysis(name="buffalo_l", providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
-        self.app.prepare(ctx_id=0, det_size=(640, 640))
+        if self.device == 'cpu':
+            self.app = FaceAnalysis(name="buffalo_l", providers=['CPUExecutionProvider'])
+            self.app.prepare(ctx_id=-1, det_size=(640, 640))
+        else: # gpu (cuda) 
+            self.app = FaceAnalysis(name="buffalo_l", providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
+            self.app.prepare(ctx_id=0, det_size=(640, 640))
 
     def set_seg_model(self, ):
         checkpoint_path = 'checkpoints/cloth_segm.pth'

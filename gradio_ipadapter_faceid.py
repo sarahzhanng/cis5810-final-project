@@ -18,7 +18,7 @@ parser.add_argument('--faceid_version', type=str, default="FaceIDPlusV2", choice
 
 args = parser.parse_args()
 
-device = "cuda"
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 vae = AutoencoderKL.from_pretrained("stabilityai/sd-vae-ft-mse").to(dtype=torch.float16)
 if args.enable_cloth_guidance:
