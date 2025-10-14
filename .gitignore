@@ -1,4 +1,3 @@
-*.safetensor
 checkpoints/ipadapter_faceid/ip-adapter-faceid-plusv2_sd15.bin
 *.pth
 *.safetensors
