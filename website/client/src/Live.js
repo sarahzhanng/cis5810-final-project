@@ -2,62 +2,68 @@ import React, { useState, useRef } from "react";
 import Webcam from "react-webcam";
 import { TabContext, TabPanel, TabList } from '@mui/lab';
 import { Box, Tab } from '@mui/material';
+import ImageUpload from "./ImageUpload";
 
 const Live = () => {
     const webcamRef = useRef(null);
-    const [tabValue, setTabValue] = useState('live')
-    const [imgSrc, setImgSrc] = useState(null)
-    const [selectedImg, setSelectedImg] = useState(null)
+    const [tabValue, setTabValue] = useState('upload')
+    const [image, setImage] = useState(null)
+
     return (
-        <>
+        <div
+            style={{
+                display: 'flex',
+                flexDirection: 'column'
+            }}
+        >
             <TabContext value={tabValue}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                     <TabList onChange={(e, val) => setTabValue(val)} aria-label="lab API tabs example">
-                    <Tab label="Live Camera" value="live" />
                     <Tab label="Upload Image" value="upload" />
+                    <Tab label="Live Camera" value="live" />
                     </TabList>
                 </Box>
                 <TabPanel value="live">
-                    <Webcam
-                        ref={webcamRef}
-                        screenshotFormat="image/jpeg"
-                        mirrored={true}
+                    <div
+                        style={{
+                            display: image ? 'none' : 'block'
+                        }}
                     >
-                        {({ getScreenshot }) => (
+                        <Webcam
+                            ref={webcamRef}
+                            screenshotFormat="image/jpeg"
+                            mirrored={true}
+                        />
                         <button
-                            onClick={() => {
-                                setImgSrc(getScreenshot())
-                            }}
+                            onClick={() => setImage(webcamRef.current.getScreenshot())}
                         >
                             Capture photo
                         </button>
-                        )}
-                    </Webcam>
+                    </div>
 
-                    {imgSrc && (
-                        <img
-                        src={imgSrc}
-                        />
+                    {image && (
+                        <div>
+                            <img
+                                src={image}
+                            />
+
+                            <button
+                                onClick={() => setImage(null)}
+                            >
+                                Retake photo
+                            </button>
+                        </div>
                     )}
                 </TabPanel>
                 <TabPanel value="upload">
-                    <input
-                        type="file"
-                        onChange={(e) => {
-                            setSelectedImg(e.target.files[0])
+                    <ImageUpload
+                        handleUpload={img => {
+                            setImage(img)
                         }}
                     />
-                    {selectedImg && (
-                        <img
-                            src={URL.createObjectURL(selectedImg)}
-                        />
-                    )}
                 </TabPanel>
             </TabContext>
-
-            
-            
-        </>
+        </div>
     )
 }
 
