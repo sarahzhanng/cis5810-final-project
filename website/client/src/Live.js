@@ -18,7 +18,12 @@ const Live = () => {
         >
             <TabContext value={tabValue}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <TabList onChange={(e, val) => setTabValue(val)} aria-label="lab API tabs example">
+                    <TabList 
+                        onChange={(e, val) => {
+                            setTabValue(val)
+                            setImage(null)
+                        }} 
+                    >
                     <Tab label="Upload Image" value="upload" />
                     <Tab label="Live Camera" value="live" />
                     </TabList>
@@ -26,13 +31,19 @@ const Live = () => {
                 <TabPanel value="live">
                     <div
                         style={{
-                            display: image ? 'none' : 'block'
+                            display: image ? 'none' : 'block',
+                            height: '100%',
+                            width: '100%'
                         }}
                     >
                         <Webcam
                             ref={webcamRef}
                             screenshotFormat="image/jpeg"
                             mirrored={true}
+                            style={{
+                                height: '100%',
+                                width: '100%'
+                            }}
                         />
                         <button
                             onClick={() => setImage(webcamRef.current.getScreenshot())}

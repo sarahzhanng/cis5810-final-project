@@ -37,7 +37,11 @@ const ImageUpload = ({handleUpload}) => {
 				cursor: 'pointer',
 				border: '2px dashed #ccc',
 
-				overflow: 'hidden'
+				overflow: 'hidden',
+				
+				display: 'flex',
+				alignItems: 'center',
+				justifyContent: 'center'
 			}}
 			onPaste={handlePaste}
 			onClick={e => inputRef.current.click()}

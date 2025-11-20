@@ -1,5 +1,6 @@
 import Live from './Live.js'
 import Cloth from './Cloth.js'
+import { useState } from 'react'
 
 const topItems = [
   {img: 'https://m.media-amazon.com/images/I/81ZTK8LKN1L._AC_UL480_FMwebp_QL65_.jpg'},
@@ -24,6 +25,19 @@ const bottomItems = [
 ]
 
 const TryOn = () => {
+
+  const [cloth, setCloth] = useState({
+    'top': null,
+    'bottom': null
+  })
+
+  const handleCloth = (id, img) => {
+    setCloth(prev => ({
+      ...prev,
+      [id]: img
+    }))
+  }
+
   return (
     <div
       style={{
@@ -31,17 +45,42 @@ const TryOn = () => {
         flexDirection: 'row'
       }}
     >
-      <Live/>
-      <Cloth 
-        id='top' 
-        num_cols={2}
-        itemData={topItems} 
-      />
-      <Cloth 
-        id='bottom'
-        num_cols={2}
-        itemData={bottomItems}
-      />
+      <div
+        style={{
+          height: '100%',
+          width: '100%'
+        }}
+      >
+        <Live/>
+      </div>
+      <div
+        style={{
+          height: '100%',
+          width: '100%'
+        }}
+      >
+        <Cloth 
+          id='top' 
+          num_cols={2}
+          itemData={topItems} 
+          handleSelection={(img) => handleCloth('top', img)}
+          upload={true}
+        />        
+      </div>
+      <div
+        style={{
+          height: '100%',
+          width: '100%'
+        }}
+      >
+        <Cloth 
+          id='bottom'
+          num_cols={2}
+          itemData={bottomItems}
+          handleSelection={(img) => handleCloth('bottom', img)}
+          upload={true}
+        />
+      </div>
     </div>
   )
 }
