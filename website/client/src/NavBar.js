@@ -19,11 +19,11 @@ const NavBar = () => {
                     <a 
                         href="/tryon"
                         style={{
-                        color: "white",
-                        textDecoration: "none",
-                        fontWeight: "bold",
-                        padding: "8px 12px",
-                        borderRadius: "4px",
+                            color: "white",
+                            textDecoration: "none",
+                            fontWeight: "bold",
+                            padding: "8px 12px",
+                            borderRadius: "4px",
                         }}
                         onMouseEnter={(e) => e.target.style.backgroundColor = "green"}
                         onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
@@ -35,16 +35,50 @@ const NavBar = () => {
                     <a 
                         href="/suggestion"
                         style={{
-                        color: "white",
-                        textDecoration: "none",
-                        fontWeight: "bold",
-                        padding: "8px 12px",
-                        borderRadius: "4px",
+                            color: "white",
+                            textDecoration: "none",
+                            fontWeight: "bold",
+                            padding: "8px 12px",
+                            borderRadius: "4px",
                         }}
                         onMouseEnter={(e) => e.target.style.backgroundColor = "green"}
                         onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                     >
                         Suggestion
+                    </a>
+                </li>
+
+                <li>
+                    <a 
+                        href="/login"
+                        style={{
+                            color: "white",
+                            textDecoration: "none",
+                            fontWeight: "bold",
+                            padding: "8px 12px",
+                            borderRadius: "4px",
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = "green"}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                    >
+                        Login
+                    </a>
+                </li>
+
+                <li>
+                    <a 
+                        href="/signup"
+                        style={{
+                            color: "white",
+                            textDecoration: "none",
+                            fontWeight: "bold",
+                            padding: "8px 12px",
+                            borderRadius: "4px",
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = "green"}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                    >
+                        Signup
                     </a>
                 </li>
                 {/* Uncomment for Help link */}

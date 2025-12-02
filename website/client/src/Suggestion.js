@@ -1,29 +1,57 @@
-import { Button, TextField, Menu, MenuItem } from "@mui/material"
+import { Button, TextField } from "@mui/material"
 import { useEffect, useState } from "react"
 import Cloth from "./Cloth"
 import Slideshow from "./Slideshow"
 import ImageUpload from "./ImageUpload"
+import MenuComponent from "./Menu"
 
 const clothing_url = 'https://virtual-tryon-backend-974u.onrender.com'
 
 const Suggestion = () => {
     
     const [metadata, setMetadata] = useState([])
-    const [mode, setMode] = useState('tops')
+
+    // sorting
+    const [type, setType] = useState(null)
+    const [selectedType, setSelectedType] = useState([])
+    const [color, setColor] = useState(null)
+    const [selectedColor, setSelectedColor] = useState([])
+    const [season, setSeason] = useState(null)
+    const [selectedSeason, setSelectedSeason] = useState([])
+    const [usage, setUsage] = useState(null)
+    const [selectedUsage, setSelectedUsage] = useState([])
+
+    const [mode, setMode] = useState('top')
     const [cloth, setCloth] = useState(null)
     const [query, setQuery] = useState('')
     const [result, setResult] = useState(null)
 
     useEffect(() => {
         if (mode != 'upload') {
-            fetch(`${clothing_url}/${mode}`)
+            fetch(`${clothing_url}/${mode}s`)
                 .then(res => res.json())
                 .then(json => {
-                    json = json.map((item) => item.image_url)
+                    setType([...new Set(json.map((item) => item.articleType))])
+                    setColor([...new Set(json.map((item) => item.baseColour))])
+                    setSeason([...new Set(json.map((item) => item.season))])
+                    setUsage([...new Set(json.map((item) => item.usage))])
+                    let img_url = json.map((item) => item.image_url)
+                    console.log(img_url.length)
+                    // if (selectedType.length != 0 || selectedColor.length != 0 || selectedSeason.length != 0 || selectedUsage.length != 0) {
+                    //     img_url = img_url.filter((item) => (
+                    //             selectedType.includes(item.articleType) &&
+                    //             selectedColor.includes(item.baseColour) && 
+                    //             selectedSeason.includes(item.season) &&
+                    //             selectedUsage.includes(item.usage)
+                    //         ))
+                        
+                    //     console.log(img_url.length)
+                    // }
                     const result = []
                     for (let i = 0; i < 9; i++) {
-                        const randomIndex = Math.floor(Math.random() * json.length);
-                        const selectedElement = clothing_url + json.splice(randomIndex, 1)[0]; // Remove and get the element
+                        const randomIndex = Math.floor(Math.random() * img_url.length);
+                        console.log(randomIndex)
+                        const selectedElement = clothing_url + img_url.splice(randomIndex, 1)[0];
                         result.push({'img': selectedElement});
                     }
                     setMetadata(result)
@@ -31,7 +59,7 @@ const Suggestion = () => {
         } else { // mode = 'upload'
             setMetadata(null)
         }
-    }, [mode])
+    }, [mode, selectedType, selectedColor, selectedSeason, selectedUsage])
 
     const getSuggestion = (event) => {
         // get suggestion using query + selected clothing
@@ -52,7 +80,7 @@ const Suggestion = () => {
                         console.log(json)
                         setResult(json)
                     })
-            } else if (mode == 'tops') {
+            } else if (mode == 'top') {
                 const data = {
                     "top_id": cloth
                 }
@@ -68,7 +96,7 @@ const Suggestion = () => {
                         console.log(json)
                         setResult(json)
                     })
-            } else if (mode == 'bottoms') {
+            } else if (mode == 'bottom') {
                 const data = {
                     "bottom_id": cloth
                 }
@@ -85,13 +113,17 @@ const Suggestion = () => {
                         setResult(json)
                     })
             } else {
-                const file = new File([cloth], 'image.jpg', {type: cloth.type})
-                const formData = new FormData()
-                formData.append("file", file)
-                fetch(`${clothing_url}/suggest_from_photo`, {
-                    method: 'POST',
-                    body: formData
-                })
+                fetch(cloth)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const file = new File([blob], 'image.png', {type: 'png'})
+                        const formData = new FormData()
+                        formData.append("file", file, "image.png")
+                        return fetch(`${clothing_url}/suggest_from_photo`, {
+                            method: 'POST',
+                            body: formData
+                        })
+                    })
                     .then(res => res.json())
                     .then(json => {
                         console.log(json)
@@ -102,16 +134,11 @@ const Suggestion = () => {
         }
     }
 
-    const [anchorEl, setAnchorEl] = useState(null);
-    const open = Boolean(anchorEl);
-    const handleClick = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
-    const handleClose = (mode) => {
-        setMode(mode)
-        setAnchorEl(null);
-    };
-
+    const selectMode = (value) => {
+        setMode(value.toLowerCase())
+        setCloth(null)
+        setResult(null)
+    }
 
 
     return (
@@ -127,31 +154,67 @@ const Suggestion = () => {
                     width: '100%'
                 }}
             >
-                <div>
-                    <Button
-                        id="basic-button"
-                        aria-controls={open ? 'basic-menu' : undefined}
-                        aria-haspopup="true"
-                        aria-expanded={open ? 'true' : undefined}
-                        onClick={handleClick}
-                    >
-                        Options
-                    </Button>
-                    <Menu
-                        id="basic-menu"
-                        anchorEl={anchorEl}
-                        open={open}
-                        onClose={handleClose}
-                        slotProps={{
-                            list: {
-                                'aria-labelledby': 'basic-button',
-                            },
-                        }}
-                    >
-                        <MenuItem onClick={() => handleClose('tops')}>Top</MenuItem>
-                        <MenuItem onClick={() => handleClose('bottoms')}>Bottom</MenuItem>
-                        <MenuItem onClick={() => handleClose('upload')}>Upload</MenuItem>
-                    </Menu>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'row'
+                    }}
+                >
+                    <MenuComponent
+                        title='Options'
+                        values={['Top', 'Bottom', 'Upload']}
+                        handleSelect={(value) => selectMode(value)}
+                    />
+
+                    {type && 
+                        <MenuComponent
+                            title='Types'
+                            values={type}
+                            handleSelect={(value) => setSelectedType(prev => [...prev, value])}
+                        />
+                    }
+
+                    {color && 
+                        <MenuComponent
+                            title='Colors'
+                            values={color}
+                            handleSelect={(value) => setSelectedColor(prev => [...prev, value])}
+                        />
+                    }
+
+                    {season && 
+                        <MenuComponent
+                            title='Seasons'
+                            values={season}
+                            handleSelect={(value) => setSelectedSeason(prev => [...prev, value])}
+                        />
+                    }
+
+                    {usage && 
+                        <MenuComponent
+                            title='Usages'
+                            values={usage}
+                            handleSelect={(value) => setSelectedUsage(prev => [...prev, value])}
+                        />
+                    }
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "row", gap: "8px" }}>
+                    <span>Filters:</span>
+                    {[...selectedType, ...selectedColor, ...selectedSeason, ...selectedUsage].map((f) => {
+                        return (
+                            <div
+                                key={f}
+                                style={{
+                                    padding: "4px 10px",
+                                    borderRadius: "12px",
+                                    background: "#eee"
+                                }}
+                            >
+                                {f}
+                            </div>
+                        )
+                    })}
                 </div>
 
                 <div

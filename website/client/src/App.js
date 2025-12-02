@@ -3,6 +3,8 @@ import './App.css';
 import TryOn from './TryOn';
 import NavBar from './NavBar';
 import Suggestion from './Suggestion';
+import Login from './Login';
+import Signup from './Signup';
 import { Route, Routes } from "react-router-dom";
 
 function App() {
@@ -17,6 +19,8 @@ function App() {
           <Route path="/" element={<TryOn />} />
           <Route path="/tryon" element={<TryOn />} />
           <Route path="/suggestion" element={<Suggestion />} />
+          <Route path='/login' element={<Login /> } />
+          <Route path='/signup' element={<Signup/> } />
         </Routes>
       </div>
 
