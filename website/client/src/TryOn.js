@@ -1,6 +1,10 @@
 import Live from './Live.js'
 import Cloth from './Cloth.js'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+
+import { io } from "socket.io-client"
+const socket = io('http://127.0.0.1:5000')
+
 
 const topItems = [
   {img: 'https://m.media-amazon.com/images/I/81ZTK8LKN1L._AC_UL480_FMwebp_QL65_.jpg'},
@@ -11,7 +15,8 @@ const topItems = [
   {img: 'https://m.media-amazon.com/images/I/61RqkqCmbEL._AC_SX425_.jpg'},
   {img: 'https://m.media-amazon.com/images/I/71dmd0tYXFL._AC_SX425_.jpg'},
   {img: 'https://m.media-amazon.com/images/I/71sXZvJbTTL._AC_SY550_.jpg'},
-  {img: 'https://m.media-amazon.com/images/I/611IUuDJqfL._AC_SY550_.jpg'}
+  {img: 'https://m.media-amazon.com/images/I/611IUuDJqfL._AC_SY550_.jpg'},
+  {img: 'http://pngimg.com/uploads/dress/dress_PNG156.png'}
 ]
 
 const bottomItems = [
@@ -25,6 +30,9 @@ const bottomItems = [
 ]
 
 const TryOn = () => {
+  const webcamRef = useRef(null);
+  const [testImg, setTestImg] = useState(null)
+  const [tryonState, setTryonState] = useState(false)
 
   const [cloth, setCloth] = useState({
     'top': null,
@@ -36,6 +44,47 @@ const TryOn = () => {
       ...prev,
       [id]: img
     }))
+  }
+
+  const clothRef = useRef(cloth)
+
+  useEffect(() => {
+    clothRef.current = cloth
+  }, [cloth])
+
+  useEffect(() => {
+    socket.on('receive_update', (data) => {
+      console.log("received")
+      const blob = new Blob([data], {type: "image/png"})
+      const url = URL.createObjectURL(blob)
+      setTestImg(url)
+    })
+    
+    socket.on('reminder', () => {
+      console.log('remindered')
+      tryonButton()
+    })
+  }, [])
+
+  const tryonButton = () => {
+    console.log('starting trying on')
+    setTryonState(true)
+    const screenshot = webcamRef.current.getScreenshot()
+    
+    fetch(clothRef.current['top'])
+      .then(res => res.blob())
+      .then(blob => blob.arrayBuffer())
+      .then(buffer => {
+        socket.emit('send_message', screenshot, buffer)
+      }).catch(err => {
+        console.log(err)
+      })
+    
+  }
+
+  const stopTryonButton = () => {
+    setTryonState(false)
+    socket.emit('stop_thread')
   }
 
   return (
@@ -51,7 +100,13 @@ const TryOn = () => {
           width: '100%'
         }}
       >
-        <Live/>
+        <Live webcamRef={webcamRef}/>
+        {tryonState ? 
+          <button onClick={stopTryonButton}>Stop Try-On</button>
+        :
+          <button onClick={tryonButton}>Start Try-On</button>
+        }
+        
       </div>
       <div
         style={{
@@ -81,6 +136,10 @@ const TryOn = () => {
           upload={true}
         />
       </div>
+
+      {testImg && 
+        <img src={testImg}/>
+      }
     </div>
   )
 }

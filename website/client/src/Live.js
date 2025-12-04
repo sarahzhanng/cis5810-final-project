@@ -4,8 +4,10 @@ import { TabContext, TabPanel, TabList } from '@mui/lab';
 import { Box, Tab } from '@mui/material';
 import ImageUpload from "./ImageUpload";
 
-const Live = () => {
-    const webcamRef = useRef(null);
+
+const Live = ({webcamRef}) => {
+    
+
     const [tabValue, setTabValue] = useState('upload')
     const [image, setImage] = useState(null)
 
@@ -50,6 +52,7 @@ const Live = () => {
                         >
                             Capture photo
                         </button>
+
                     </div>
 
                     {image && (

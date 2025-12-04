@@ -154,7 +154,7 @@ const Suggestion = () => {
                     width: '100%'
                 }}
             >
-                <div
+                {/* <div
                     style={{
                         display: 'flex',
                         flexDirection: 'row'
@@ -197,7 +197,7 @@ const Suggestion = () => {
                             handleSelect={(value) => setSelectedUsage(prev => [...prev, value])}
                         />
                     }
-                </div>
+                </div> */}
 
                 <div style={{ display: "flex", flexDirection: "row", gap: "8px" }}>
                     <span>Filters:</span>
