@@ -1,6 +1,7 @@
 import { Button, TextField } from "@mui/material"
 import { useState } from "react";
 
+import { ToastContainer, toast, Bounce } from 'react-toastify';
 
 const Signup = () => {
 
@@ -24,7 +25,18 @@ const Signup = () => {
       }).then(res => {
         return res.json()
       }).then(json => {
-        setResponse(json['message'])
+        // setResponse(json['message'])
+toast.info(json['message'], {
+position: "bottom-center",
+autoClose: 4000,
+hideProgressBar: true,
+closeOnClick: true,
+pauseOnHover: true,
+draggable: false,
+progress: undefined,
+theme: "light",
+transition: Bounce,
+});
       }).catch(err => {
         console.log(err)
         setResponse('Internal server error.')
@@ -41,6 +53,19 @@ const Signup = () => {
         height: "calc(100vh - 52px)",
       }}
     >
+<ToastContainer
+position="bottom-center"
+autoClose={4000}
+hideProgressBar={true}
+newestOnTop={false}
+closeOnClick={true}
+rtl={false}
+pauseOnFocusLoss={false}
+draggable={false}
+pauseOnHover
+theme="light"
+transition={Bounce}
+/>
     <div
       style={{
         display: "flex",

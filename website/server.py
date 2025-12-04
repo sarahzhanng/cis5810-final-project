@@ -33,19 +33,33 @@ def sign_up():
 def login():
     data = request.json
     user = users_collection.find_one({'username': data['username']})
-    
-    if user['password'] != data['password']: 
-        jsonify({"message": "Incorrect username or password"}), 401
+    print(user)
+    if (user is None) or (len(user) == 0) or (user['password'] != data['password']):
+        print('error') 
+        return jsonify({"message": "Incorrect username or password"}), 401
         
-    resp = make_response(jsonify({'message': 'Login Successful'}), 201)
+    resp = make_response(jsonify({'message': 'Login Successful', 'token': data['username']}), 201)
     resp.set_cookie(
         "token",
-        "example_jwt_token",
+        data['username'],
         httponly=True,
         samesite="None",
         secure=True
     )
     return resp
+
+@app.route('/logout')
+def logout():
+    resp = make_response(jsonify({"message": "Logout successful"}), 200)
+    resp.delete_cookie(
+        "token",
+        path="/",
+        samesite="None",
+        secure=True
+    )
+    return resp
+
+
 @app.route('/me')
 def me():
     token = request.cookies.get("token")

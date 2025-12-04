@@ -1,11 +1,16 @@
 
 import { Button, TextField } from "@mui/material"
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { AuthContext } from "./AuthContext";
+
+import { ToastContainer, toast, Bounce } from 'react-toastify';
 
 const Login = () => {
-  const [username, setUsername] = useState("");
+  const [username, setUsernameState] = useState("");
   const [password, setPassword] = useState("");
   const [response, setResponse] = useState(null)
+
+  const { setUsername } = useContext(AuthContext)
 
   const handleLogin = () => {
     fetch(`http://127.0.0.1:5000/login`, {
@@ -19,11 +24,23 @@ const Login = () => {
         "password": password
       })
     }).then(res => {
-      console.log(res)
       return res.json()
     }).then(json => {
-      console.log(json)
-      setResponse(json['message'])
+toast.info(json['message'], {
+position: "bottom-center",
+autoClose: 4000,
+hideProgressBar: true,
+closeOnClick: true,
+pauseOnHover: true,
+draggable: false,
+progress: undefined,
+theme: "light",
+transition: Bounce,
+});
+      // setResponse()
+      setUsername(json['token'])
+    }).catch(err => {
+      console.log(err)
     })
   }
 
@@ -36,6 +53,19 @@ const Login = () => {
         height: "calc(100vh - 52px)",
       }}
     >
+<ToastContainer
+position="bottom-center"
+autoClose={4000}
+hideProgressBar={true}
+newestOnTop={false}
+closeOnClick={true}
+rtl={false}
+pauseOnFocusLoss={false}
+draggable={false}
+pauseOnHover
+theme="light"
+transition={Bounce}
+/>
     <div
       style={{
         display: "flex",
@@ -48,7 +78,7 @@ const Login = () => {
       <TextField
         label="Username"
         value={username}
-        onChange={(e) => setUsername(e.target.value)}
+        onChange={(e) => setUsernameState(e.target.value)}
       />
       <TextField
         label="Password"
@@ -67,7 +97,6 @@ const Login = () => {
         >
           Login
         </Button>
-        {response && <p>{response}</p>}
       </div>
     </div>
     </div>

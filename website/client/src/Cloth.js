@@ -1,8 +1,12 @@
-import React, { useState } from "react";
-import { ImageList, ImageListItem } from '@mui/material';
+import React, { useContext, useState } from "react";
+import { ImageList, ImageListItem, IconButton } from '@mui/material';
+import FavoriteIcon from "@mui/icons-material/Favorite";
 import ImageUpload from "./ImageUpload";
+import { AuthContext } from "./AuthContext";
 
 const Cloth = ({id, itemData, num_cols, handleSelection, upload }) => {
+    const { username } = useContext(AuthContext)
+    
     const [selected, setSelected] = useState(null);
 
     const selectImage = (img) => {
@@ -51,14 +55,30 @@ const Cloth = ({id, itemData, num_cols, handleSelection, upload }) => {
                             boxSizing: 'border-box'
                         }}
                     >
-                        <img 
-                            src={item.img}
-                            style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "contain"
-                            }}
-                        />
+    <img 
+        src={item.img}
+        style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain"
+        }}
+    />
+    {username && 
+    <IconButton
+        // onClick={(e) => { e.stopPropagation(); toggleSave(item.img); }}
+        style={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            // color: savedImages.includes(item.img) ? 'red' : 'white',
+            backgroundColor: 'rgba(0,0,0,0.3)',
+            borderRadius: '50%'
+        }}
+    >
+        <FavoriteIcon />
+    </IconButton>
+    }
+
                     </ImageListItem>
                 ))}
             </ImageList>
