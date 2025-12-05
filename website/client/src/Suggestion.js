@@ -19,14 +19,23 @@ const Suggestion = () => {
         .then(json => {
           json = json.map(item => item.image_url);
           const result = [];
-          for (let i = 0; i < 9; i++) {
+          while (result.length < 9 && json.length > 0) {
             const randomIndex = Math.floor(Math.random() * json.length);
-            const selectedElement = clothing_url + json.splice(randomIndex, 1)[0];
-            result.push({ img: selectedElement });
-            // fetch(`${clothing_url}${item.bottom.image_url}`)
-            // .then(res => res.blob())
-            // .then(blob => {console.log(blob)})
+            const selectedElement = clothing_url + json[randomIndex];
+
+            // Wait for fetch result
+            const res = await fetch(selectedElement);
+            const blob = await res.blob();
+
+            // Only accept images (or whatever type you want)
+            if (blob.type.startsWith("image/")) {
+              result.push(selectedElement);
+            }
+
+            // Remove from json so we don't re-pick it
+            json.splice(randomIndex, 1);
           }
+
           setMetadata(result);
         });
     } else {
