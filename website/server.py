@@ -146,7 +146,7 @@ def handle_message(img, cloth):
 def stop_thread():
     sid = request.sid
     if sid in clients:
-        print('stopping')
+        print('stopppppppppppppppppppppppppppppppppppppppppppppppppppppppppping')
         clients[sid]['running'] = False
         socketio.emit('receive_message', {'message': 'Stopped'}, to=sid)
 

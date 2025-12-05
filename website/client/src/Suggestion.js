@@ -1,67 +1,37 @@
-import { Button, TextField } from "@mui/material"
-import { useEffect, useState } from "react"
-import Cloth from "./Cloth"
-import Slideshow from "./Slideshow"
-import ImageUpload from "./ImageUpload"
-import MenuComponent from "./Menu"
+import React, { useEffect, useState } from "react";
+import { Button, Dropdown, DropdownButton } from "react-bootstrap";
+import Cloth from "./Cloth";
+import Slideshow from "./Slideshow";
+import ImageUpload from "./ImageUpload";
 
-const clothing_url = 'https://virtual-tryon-backend-974u.onrender.com'
+const clothing_url = 'https://virtual-tryon-backend-974u.onrender.com';
 
 const Suggestion = () => {
-    
-    const [metadata, setMetadata] = useState([])
+  const [metadata, setMetadata] = useState([]);
+  const [mode, setMode] = useState('tops');
+  const [cloth, setCloth] = useState(null);
+  const [result, setResult] = useState(null);
 
-    // sorting
-    const [type, setType] = useState(null)
-    const [selectedType, setSelectedType] = useState([])
-    const [color, setColor] = useState(null)
-    const [selectedColor, setSelectedColor] = useState([])
-    const [season, setSeason] = useState(null)
-    const [selectedSeason, setSelectedSeason] = useState([])
-    const [usage, setUsage] = useState(null)
-    const [selectedUsage, setSelectedUsage] = useState([])
+  useEffect(() => {
+    if (mode !== 'upload') {
+      fetch(`${clothing_url}/${mode}`)
+        .then(res => res.json())
+        .then(json => {
+          json = json.map(item => item.image_url);
+          const result = [];
+          for (let i = 0; i < 9; i++) {
+            const randomIndex = Math.floor(Math.random() * json.length);
+            const selectedElement = clothing_url + json.splice(randomIndex, 1)[0];
+            result.push({ img: selectedElement });
+          }
+          setMetadata(result);
+        });
+    } else {
+      setMetadata(null);
+    }
+  }, [mode]);
 
-    const [mode, setMode] = useState('top')
-    const [cloth, setCloth] = useState(null)
-    const [query, setQuery] = useState('')
-    const [result, setResult] = useState(null)
-
-    useEffect(() => {
-        if (mode != 'upload') {
-            fetch(`${clothing_url}/${mode}s`)
-                .then(res => res.json())
-                .then(json => {
-                    setType([...new Set(json.map((item) => item.articleType))])
-                    setColor([...new Set(json.map((item) => item.baseColour))])
-                    setSeason([...new Set(json.map((item) => item.season))])
-                    setUsage([...new Set(json.map((item) => item.usage))])
-                    let img_url = json.map((item) => item.image_url)
-                    console.log(img_url.length)
-                    // if (selectedType.length != 0 || selectedColor.length != 0 || selectedSeason.length != 0 || selectedUsage.length != 0) {
-                    //     img_url = img_url.filter((item) => (
-                    //             selectedType.includes(item.articleType) &&
-                    //             selectedColor.includes(item.baseColour) && 
-                    //             selectedSeason.includes(item.season) &&
-                    //             selectedUsage.includes(item.usage)
-                    //         ))
-                        
-                    //     console.log(img_url.length)
-                    // }
-                    const result = []
-                    for (let i = 0; i < 9; i++) {
-                        const randomIndex = Math.floor(Math.random() * img_url.length);
-                        console.log(randomIndex)
-                        const selectedElement = clothing_url + img_url.splice(randomIndex, 1)[0];
-                        result.push({'img': selectedElement});
-                    }
-                    setMetadata(result)
-                })
-        } else { // mode = 'upload'
-            setMetadata(null)
-        }
-    }, [mode, selectedType, selectedColor, selectedSeason, selectedUsage])
-
-    const getSuggestion = (event) => {
+  const getSuggestion = (event) => {
         // get suggestion using query + selected clothing
         if (cloth != null) {
             if (mode == 'tops') {
@@ -134,168 +104,66 @@ const Suggestion = () => {
         }
     }
 
-    const selectMode = (value) => {
-        setMode(value.toLowerCase())
-        setCloth(null)
-        setResult(null)
-    }
+  return (
+    <div className="container-fluid my-4" style={{ height: "calc(100vh - 2rem)" }}>
+      <div className="row h-100 gx-4">
 
+        {/* Left half */}
+        <div className="col-12 col-md-6 d-flex flex-column h-100">
+          <div className="mb-3 d-flex justify-content-start">
+            <DropdownButton title="Options" variant="success">
+              <Dropdown.Item onClick={() => setMode('tops')}>Top</Dropdown.Item>
+              <Dropdown.Item onClick={() => setMode('bottoms')}>Bottom</Dropdown.Item>
+              <Dropdown.Item onClick={() => setMode('upload')}>Upload</Dropdown.Item>
+            </DropdownButton>
+          </div>
 
-    return (
-        <div
-            style={{
-                display: 'flex',
-                flexDirection: 'row'
-            }}
-        >
-            <div
-                style={{
-                    height: '100%',
-                    width: '100%'
+          <div className="flex-fill d-flex">
+            {metadata ? (
+              <Cloth
+                itemData={metadata}
+                num_cols={3}
+                handleSelection={(img) => {
+                  img = img.substring((clothing_url + '/static/').length, img.length - 4);
+                  setCloth(img);
                 }}
-            >
-                {/* <div
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'row'
-                    }}
-                >
-                    <MenuComponent
-                        title='Options'
-                        values={['Top', 'Bottom', 'Upload']}
-                        handleSelect={(value) => selectMode(value)}
-                    />
-
-                    {type && 
-                        <MenuComponent
-                            title='Types'
-                            values={type}
-                            handleSelect={(value) => setSelectedType(prev => [...prev, value])}
-                        />
-                    }
-
-                    {color && 
-                        <MenuComponent
-                            title='Colors'
-                            values={color}
-                            handleSelect={(value) => setSelectedColor(prev => [...prev, value])}
-                        />
-                    }
-
-                    {season && 
-                        <MenuComponent
-                            title='Seasons'
-                            values={season}
-                            handleSelect={(value) => setSelectedSeason(prev => [...prev, value])}
-                        />
-                    }
-
-                    {usage && 
-                        <MenuComponent
-                            title='Usages'
-                            values={usage}
-                            handleSelect={(value) => setSelectedUsage(prev => [...prev, value])}
-                        />
-                    }
-                </div> */}
-
-                <div style={{ display: "flex", flexDirection: "row", gap: "8px" }}>
-                    <span>Filters:</span>
-                    {[...selectedType, ...selectedColor, ...selectedSeason, ...selectedUsage].map((f) => {
-                        return (
-                            <div
-                                key={f}
-                                style={{
-                                    padding: "4px 10px",
-                                    borderRadius: "12px",
-                                    background: "#eee"
-                                }}
-                            >
-                                {f}
-                            </div>
-                        )
-                    })}
-                </div>
-
-                <div
-                    style={{
-                        height: '100%',
-                        width: '100%'
-                    }}
-                >
-                    {metadata ? (
-                        <Cloth
-                            id='suggestion'
-                            itemData={metadata}
-                            num_cols={3}
-                            handleSelection={(img) => {
-                                img = img.substring((clothing_url+'/static/').length, img.length-4)
-                                setCloth(img)
-                            }}
-                            upload={false}
-                        />
-                    ) : (
-                        <div>
-                            <ImageUpload
-                                handleUpload={(img) => setCloth(img)}
-                            />
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            <div
-                style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '100%',
-                    width: '100%'
-                }}
-            >
-                {/* {mode == 'upload' && 
-                    <TextField
-                        label='enter query'
-                        variant='standard'
-                        multiline
-                        onChange={(e) => {
-                            setQuery(e.target.value)
-                        }}
-                    />
-                } */}
-
-                <Button
-                    onClick={getSuggestion}
-                >
-                    Get suggestion
-                </Button>
-
-                {result && (
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            maxHeight: '100vh',
-                            overflowX: 'scroll'
-                        }}
-                    >
-                        Explanation: {result.explanation}
-                        <Slideshow images={result.looks.map((item) => `https://virtual-tryon-backend-974u.onrender.com${item.bottom.image_url}`)}/>
-                        {/* {result.looks.map((item) => (
-                            <img 
-                                key={item.bottom.image_url} 
-                                src={`https://virtual-tryon-backend-974u.onrender.com${item.bottom.image_url}`}
-                                style={{
-                                    width: '100%',
-                                    height: '100%'
-                                }}
-                            />
-                        ))} */}
-                    </div>
-                )}
-            </div>
+                upload={false}
+              />
+            ) : (
+              <div className="border p-3 rounded w-100 d-flex justify-content-center align-items-center">
+                <ImageUpload handleUpload={(img) => setCloth(img)} />
+              </div>
+            )}
+          </div>
         </div>
-    )
 
-}
+        {/* Right half */}
+        <div className="col-12 col-md-6 d-flex flex-column h-100">
+          <div className="mb-3">
+            <Button variant="primary" onClick={getSuggestion} className="w-100">
+              Get Suggestion
+            </Button>
+          </div>
 
-export default Suggestion
+          {result && (
+            <div className="flex-fill d-flex flex-column">
+              <div className="mb-2 p-2 bg-light border rounded">
+                <strong>Explanation:</strong> {result.explanation}
+              </div>
+              <div className="flex-fill">
+                <Slideshow
+                  images={result.looks.map(
+                    (item) => `${clothing_url}${item.bottom.image_url}`
+                  )}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+export default Suggestion;

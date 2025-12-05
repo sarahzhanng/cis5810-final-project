@@ -1,84 +1,70 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import Webcam from "react-webcam";
-import { TabContext, TabPanel, TabList } from '@mui/lab';
-import { Box, Tab } from '@mui/material';
-import ImageUpload from "./ImageUpload";
 
+const Live = ({ webcamRef }) => {
+  const [image, setImage] = useState(null);
 
-const Live = ({webcamRef}) => {
-    
-
-    const [tabValue, setTabValue] = useState('upload')
-    const [image, setImage] = useState(null)
-
-    return (
-        <div
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%", // Fill parent panel vertically
+        gap: "8px",
+      }}
+    >
+      <div
+        style={{
+          flex: 1, // Webcam / captured image fills remaining space
+          position: "relative",
+          borderRadius: "8px",
+          overflow: "hidden",
+          backgroundColor: "#000",
+        }}
+      >
+        {!image && (
+          <Webcam
+            ref={webcamRef}
+            screenshotFormat="image/jpeg"
+            mirrored={true}
             style={{
-                display: 'flex',
-                flexDirection: 'column'
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
             }}
-        >
-            <TabContext value={tabValue}>
-                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <TabList 
-                        onChange={(e, val) => {
-                            setTabValue(val)
-                            setImage(null)
-                        }} 
-                    >
-                    <Tab label="Upload Image" value="upload" />
-                    <Tab label="Live Camera" value="live" />
-                    </TabList>
-                </Box>
-                <TabPanel value="live">
-                    <div
-                        style={{
-                            display: image ? 'none' : 'block',
-                            height: '100%',
-                            width: '100%'
-                        }}
-                    >
-                        <Webcam
-                            ref={webcamRef}
-                            screenshotFormat="image/jpeg"
-                            mirrored={true}
-                            style={{
-                                height: '100%',
-                                width: '100%'
-                            }}
-                        />
-                        <button
-                            onClick={() => setImage(webcamRef.current.getScreenshot())}
-                        >
-                            Capture photo
-                        </button>
+          />
+        )}
 
-                    </div>
+        {image && (
+          <img
+            src={image}
+            alt="Captured"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              backgroundColor: "#000",
+            }}
+          />
+        )}
+      </div>
 
-                    {image && (
-                        <div>
-                            <img
-                                src={image}
-                            />
+      <div style={{ display: "flex", gap: "8px" }}>
+        {!image ? (
+          <button
+            style={{ flex: 1 }}
+            onClick={() => setImage(webcamRef.current.getScreenshot())}
+          >
+            Capture Photo
+          </button>
+        ) : (
+          <button style={{ flex: 1 }} onClick={() => setImage(null)}>
+            Retake Photo
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
 
-                            <button
-                                onClick={() => setImage(null)}
-                            >
-                                Retake photo
-                            </button>
-                        </div>
-                    )}
-                </TabPanel>
-                <TabPanel value="upload">
-                    <ImageUpload
-                        handleUpload={img => {
-                            setImage(img)
-                        }}
-                    />
-                </TabPanel>
-            </TabContext>
-        </div>
-    )
-}
-
-export default Live
+export default Live;

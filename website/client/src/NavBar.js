@@ -1,170 +1,74 @@
-import { useContext, useEffect, useState } from "react"
-import { AuthContext } from "./AuthContext"
-import { ToastContainer, toast, Bounce } from 'react-toastify';
+import { useContext } from "react";
+import { AuthContext } from "./AuthContext";
+import { ToastContainer, toast, Bounce } from "react-toastify";
 
-const NavBar = () => {
+export default function NavBar() {
+  const { username, setUsername } = useContext(AuthContext);
 
-    const { username, setUsername } = useContext(AuthContext)
+  const logout = () => {
+    fetch(`http://127.0.0.1:5000/logout`, { credentials: "include" })
+      .then((res) => res.json())
+      .then((json) => {
+        console.log(json);
+        setUsername(null);
+        toast.info("You have been logged out", {
+          position: "bottom-center",
+          autoClose: 4000,
+          hideProgressBar: true,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: false,
+          theme: "light",
+          transition: Bounce,
+        });
+      })
+      .catch((err) => console.log(err));
+  };
 
-    const logout = () => {
-        fetch(`http://127.0.0.1:5000/logout`, {
-            credentials: 'include'
-        })
-        .then(res => res.json())
-        .then(json => {
-            console.log(json)
-            setUsername(null)
-toast.info('Logout successful', {
-position: "bottom-center",
-autoClose: 4000,
-hideProgressBar: true,
-closeOnClick: true,
-pauseOnHover: true,
-draggable: false,
-progress: undefined,
-theme: "light",
-transition: Bounce,
-});
-        })
-        .catch(err => {
-            console.log(err)
-        })
-    }
+  return (
+    <>
+      <ToastContainer position="bottom-center" autoClose={4000} hideProgressBar theme="light" transition={Bounce} />
+      <nav className="navbar navbar-expand-lg navbar-dark px-3 shadow-sm"
+        style={{
+          backgroundColor: 'darkgreen'
+        }}
+      >
+        {/* <a className="navbar-brand fw-bold" href="/">App</a> */}
+        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span className="navbar-toggler-icon"></span>
+        </button>
 
-    return (
-        <div style={{
-            width: "100%",
-            backgroundColor: "darkgreen",
-            padding: "10px 20px",
-            boxSizing: "border-box"
-        }}>
-<ToastContainer
-position="bottom-center"
-autoClose={4000}
-hideProgressBar={true}
-newestOnTop={false}
-closeOnClick={true}
-rtl={false}
-pauseOnFocusLoss={false}
-draggable={false}
-pauseOnHover
-theme="light"
-transition={Bounce}
-/>
+        <div className="collapse navbar-collapse" id="navbarNav">
+          <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+            <li className="nav-item">
+              <a className="nav-link" href="/tryon">Try-On</a>
+            </li>
+            <li className="nav-item">
+              <a className="nav-link" href="/suggestion">Suggestions</a>
+            </li>
+          </ul>
 
-            <ul style={{
-                listStyle: "none",
-                display: "flex",
-                margin: 0,
-                padding: 0,
-                gap: "20px", // space between items
-            }}>
-                <li>
-                    <a 
-                        href="/tryon"
-                        style={{
-                            color: "white",
-                            textDecoration: "none",
-                            fontWeight: "bold",
-                            padding: "8px 12px",
-                            borderRadius: "4px",
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = "green"}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
-                    >
-                        Try On
-                    </a>
+          <ul className="navbar-nav ms-auto">
+            {username ? (
+              <>
+                <li className="nav-item">
+                  <button className="btn btn-outline-light me-2" onClick={logout}>Logout</button>
                 </li>
-                <li>
-                    <a 
-                        href="/suggestion"
-                        style={{
-                            color: "white",
-                            textDecoration: "none",
-                            fontWeight: "bold",
-                            padding: "8px 12px",
-                            borderRadius: "4px",
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = "green"}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
-                    >
-                        Suggestion
-                    </a>
+                <li className="nav-item d-flex align-items-center text-white fw-bold">{username}</li>
+              </>
+            ) : (
+              <>
+                <li className="nav-item">
+                  <a className="btn btn-outline-light me-2" href="/login">Login</a>
                 </li>
-                
-                {username ? <>
-                    <li>
-                        <span 
-                            style={{
-                                color: "white",
-                                textDecoration: "none",
-                                fontWeight: "bold",
-                                padding: "8px 12px",
-                                borderRadius: "4px",
-                                cursor: 'pointer'
-                            }}
-                            onMouseEnter={(e) => e.target.style.backgroundColor = "green"}
-                            onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
-                            onClick={logout}
-                        >
-                            Logout
-                        </span>
-                    </li>
-
-                    <li>
-                        <span 
-                            style={{
-                                color: "white",
-                                textDecoration: "none",
-                                fontWeight: "bold",
-                                padding: "8px 12px",
-                                borderRadius: "4px",
-                            }}
-                        >
-                        {username}
-                        </span>
-                    </li>
-                </>
-                :
-                <>
-                    <li>
-                        <a 
-                            href="/login"
-                            style={{
-                                color: "white",
-                                textDecoration: "none",
-                                fontWeight: "bold",
-                                padding: "8px 12px",
-                                borderRadius: "4px",
-                            }}
-                            onMouseEnter={(e) => e.target.style.backgroundColor = "green"}
-                            onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
-                        >
-                            Login
-                        </a>
-                    </li>
-
-                    <li>
-                        <a 
-                            href="/signup"
-                            style={{
-                                color: "white",
-                                textDecoration: "none",
-                                fontWeight: "bold",
-                                padding: "8px 12px",
-                                borderRadius: "4px",
-                            }}
-                            onMouseEnter={(e) => e.target.style.backgroundColor = "green"}
-                            onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
-                        >
-                            Signup
-                        </a>
-                    </li>
-                    
-                </>}
-            </ul>
+                <li className="nav-item">
+                  <a className="btn btn-outline-light" href="/signup">Sign Up</a>
+                </li>
+              </>
+            )}
+          </ul>
         </div>
-    )
+      </nav>
+    </>
+  );
 }
-
-export default NavBar
