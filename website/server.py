@@ -136,8 +136,10 @@ def handle_message(img, cloth):
     print('completed')
 
     if sid not in clients or not clients[sid]['running']:
-        clients[sid] = {'running': True}
-        t = threading.Thread(target=background_thread, args=(sid,), daemon=True)
+        print('here?')
+        stop_event = threading.Event()
+        clients[sid] = {'running': True, 'stop_event': stop_event}
+        t = threading.Thread(target=background_thread, args=(sid, stop_event), daemon=True)
         clients[sid]['thread'] = t
         t.start()
 
@@ -146,18 +148,20 @@ def handle_message(img, cloth):
 def stop_thread():
     sid = request.sid
     if sid in clients:
-        print('stopppppppppppppppppppppppppppppppppppppppppppppppppppppppppping')
+        print(sid, 'stopppppppppppppppppppppppppppppppppppppppppppppppppppppppppping')
         clients[sid]['running'] = False
+        clients[sid]['stop_event'].set()
+        # clients[sid]['thread']
         socketio.emit('receive_message', {'message': 'Stopped'}, to=sid)
 
 # Background task to broadcast messages
-def background_thread(sid):
+def background_thread(sid, stop_event):
     count = 0
-    while clients[sid]['running']:
+    while not stop_event.is_set():
         print('background thread loop start')
         socketio.emit('reminder', to=sid)
         count += 1
-        socketio.sleep(3)
+        socketio.sleep(5)
 
 # threading.Thread(target=background_thread, daemon=True).start()
 

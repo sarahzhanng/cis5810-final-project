@@ -23,6 +23,9 @@ const Suggestion = () => {
             const randomIndex = Math.floor(Math.random() * json.length);
             const selectedElement = clothing_url + json.splice(randomIndex, 1)[0];
             result.push({ img: selectedElement });
+            // fetch(`${clothing_url}${item.bottom.image_url}`)
+            // .then(res => res.blob())
+            // .then(blob => {console.log(blob)})
           }
           setMetadata(result);
         });
@@ -34,23 +37,7 @@ const Suggestion = () => {
   const getSuggestion = (event) => {
         // get suggestion using query + selected clothing
         if (cloth != null) {
-            if (mode == 'tops') {
-                const data = {
-                    "top_id": cloth
-                }
-                fetch(`${clothing_url}/generate_looks_from_top`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                })
-                    .then(res => res.json())
-                    .then(json => {
-                        console.log(json)
-                        setResult(json)
-                    })
-            } else if (mode == 'top') {
+            if (mode == 'top' || mode == 'tops') {
                 const data = {
                     "top_id": cloth
                 }
@@ -147,15 +134,16 @@ const Suggestion = () => {
 
           {result && (
             <div className="flex-fill d-flex flex-column">
-              <div className="mb-2 p-2 bg-light border rounded">
-                <strong>Explanation:</strong> {result.explanation}
-              </div>
+              
               <div className="flex-fill">
                 <Slideshow
                   images={result.looks.map(
                     (item) => `${clothing_url}${item.bottom.image_url}`
                   )}
                 />
+              </div>
+              <div className="mb-2 p-2 bg-light border rounded">
+                <strong>Explanation:</strong> {result.explanation}
               </div>
             </div>
           )}

@@ -50,11 +50,11 @@ export default function NavBar() {
 
           <ul className="navbar-nav ms-auto">
             {username ? (
-              <>
+              <>                
+                <li className="nav-item d-flex align-items-center text-white fw-bold me-2">{username}</li>
                 <li className="nav-item">
-                  <button className="btn btn-outline-light me-2" onClick={logout}>Logout</button>
+                  <button className="btn btn-outline-light" onClick={logout}>Logout</button>
                 </li>
-                <li className="nav-item d-flex align-items-center text-white fw-bold">{username}</li>
               </>
             ) : (
               <>

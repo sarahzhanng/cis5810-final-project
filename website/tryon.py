@@ -24,9 +24,9 @@ class TryOnServer:
         # self.display_height = display_height
         
         # Initialize detector
-        print(f"Initializing ClothDetector on {device}...")
+        # print(f"Initializing ClothDetector on {device}...")
         self.detector = ClothDetector(device=device, debug=False)
-        print("ClothDetector initialized successfully!")
+        # print("ClothDetector initialized successfully!")
         
         # # Load cloth image
         # print(f"Loading cloth image from: {cloth_path}")
@@ -213,14 +213,14 @@ class TryOnServer:
             #     raise ValueError(f"Could not load cloth image: {cloth_path}")
             self.cloth_image = cloth
             
-            print(f"Loaded garment: {self.cloth_image.shape}")
+            # print(f"Loaded garment: {self.cloth_image.shape}")
             
             # Pre-detect cloth keypoints
-            print("Detecting cloth keypoints...")
+            # print("Detecting cloth keypoints...")
             self.cloth_keypoints, self.cloth_mask = self.detector.detect_cloth_keypoints(
                 self.cloth_image
             )
-            print("Cloth keypoints detected!")
+            # print("Cloth keypoints detected!")
             
             # Process frame
             result, proc_time = self._process_frame(frame, cloth)

@@ -53,43 +53,50 @@ const TryOn = () => {
   const tryonButton = () => {
     setTryonState(true);
     const screenshot = webcamRef.current.getScreenshot();
-    fetch(clothRef.current['top'])
+    if (clothRef.current['top']) {
+      fetch(clothRef.current['top'])
       .then(res => res.blob())
       .then(blob => blob.arrayBuffer())
       .then(buffer => socket.emit('send_message', screenshot, buffer))
       .catch(console.log);
+    } else if (clothRef.current['bottom']) {
+      fetch(clothRef.current['bottom'])
+      .then(res => res.blob())
+      .then(blob => blob.arrayBuffer())
+      .then(buffer => socket.emit('send_message', screenshot, buffer))
+      .catch(console.log);
+    }
+    
   };
 
   const stopTryonButton = () => {
     setTryonState(false);
+    setTestImg(null)
     socket.emit('stop_thread');
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', gap: '8px', padding: '8px' }}>
-      {/* Live Camera Panel */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Live webcamRef={webcamRef} style={{ flex: 1 }} />
+    <div style={{ display: 'flex', height: 'calc(100vh - 2rem)', gap: '8px', padding: '8px' }}>
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <Live webcamRef={webcamRef} image={testImg} style={{ flex: 1 }} />
         {tryonState ? 
           <button onClick={stopTryonButton}>Stop Try-On</button> :
           <button onClick={tryonButton}>Start Try-On</button>
         }
-        {testImg && <img src={testImg} style={{ marginTop: '8px', maxWidth: '100%', flexShrink: 0 }} />}
       </div>
 
-      {/* Top Selection Panel */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Cloth
           id='top'
-          num_cols={2}
+          num_cols={4}
           itemData={topItems}
           handleSelection={(img) => handleCloth('top', img)}
           upload={true}
         />
       </div>
 
-      {/* Bottom Selection Panel */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      {/* <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Cloth
           id='bottom'
           num_cols={2}
@@ -97,7 +104,7 @@ const TryOn = () => {
           handleSelection={(img) => handleCloth('bottom', img)}
           upload={true}
         />
-      </div>
+      </div> */}
     </div>
   );
 };
