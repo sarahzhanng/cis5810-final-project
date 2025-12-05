@@ -137,7 +137,6 @@ const Suggestion = () => {
           </div>
         </div>
 
-        {/* Right half */}
         <div className="col-12 col-md-6 d-flex flex-column h-100">
           <div className="mb-3">
             <Button variant="primary" onClick={getSuggestion} className="w-100">
@@ -153,7 +152,15 @@ const Suggestion = () => {
               <div className="flex-fill">
                 <Slideshow
                   images={result.looks.map(
-                    (item) => `${clothing_url}${item.bottom.image_url}`
+                    (item) => {
+                      if (item.bottom) {
+                        return `${clothing_url}${item.bottom.image_url}`
+                      } else if (item.top) {
+                        return `${clothing_url}${item.top.image_url}`
+                      } else if (item.item) {
+                        return `${clothing_url}${item.item.image_url}`
+                      }
+                    }
                   )}
                 />
               </div>
