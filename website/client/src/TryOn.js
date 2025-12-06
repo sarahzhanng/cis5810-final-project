@@ -1,31 +1,10 @@
 import Live from './Live.js';
 import Cloth from './Cloth.js';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react';
+import { AuthContext } from "./AuthContext";
 import { io } from "socket.io-client";
-const socket = io('http://127.0.0.1:5000');
 
-const topItems = [
-  'https://m.media-amazon.com/images/I/81ZTK8LKN1L._AC_UL480_FMwebp_QL65_.jpg',
- 'https://m.media-amazon.com/images/I/81l5ZD2Gg8L._AC_UL480_FMwebp_QL65_.jpg',
-  // 'https://m.media-amazon.com/images/I/81x2mbPJiBL._AC_UL480_FMwebp_QL65_.jpg',
-  'https://m.media-amazon.com/images/I/81x2mbPJiBL._AC_UL480_FMwebp_QL65_.jpg',
-  'https://m.media-amazon.com/images/I/81jc1857thL._AC_UL480_FMwebp_QL65_.jpg',
-  'https://m.media-amazon.com/images/I/71cT-YOkpgL._AC_UL480_FMwebp_QL65_.jpg',
-  'https://m.media-amazon.com/images/I/61RqkqCmbEL._AC_SX425_.jpg',
-  'https://m.media-amazon.com/images/I/71dmd0tYXFL._AC_SX425_.jpg',
-  'https://m.media-amazon.com/images/I/71sXZvJbTTL._AC_SY550_.jpg',
-  'https://m.media-amazon.com/images/I/611IUuDJqfL._AC_SY550_.jpg',
-];
-
-const bottomItems = [
-  'https://m.media-amazon.com/images/I/61aW0cb7yYL._AC_SX522_.jpg',
-  'https://m.media-amazon.com/images/I/41GLfOLu95L._AC_SX679_.jpg',
-  'https://m.media-amazon.com/images/I/81AJRqjL2rL._AC_SX425_.jpg',
-  'https://m.media-amazon.com/images/I/614y7WrU2qL._AC_SY550_.jpg',
-  'https://m.media-amazon.com/images/I/51R4+9nBP+L._AC_SX425_.jpg',
-  'https://m.media-amazon.com/images/I/7112VPq8vAL._AC_SY550_.jpg',
-  'https://m.media-amazon.com/images/I/719-rbuKySL._AC_SY741_.jpg'
-];
+const socket = io('http://127.0.0.1:5000', { autoConnect: true });
 
 const TryOn = () => {
   const webcamRef = useRef(null);
@@ -34,79 +13,247 @@ const TryOn = () => {
   const [cloth, setCloth] = useState({ top: null, bottom: null });
   const clothRef = useRef(cloth);
 
-  useEffect(() => { clothRef.current = cloth }, [cloth]);
+  const [view, setView] = useState('all');
+  const [topItems, setTopItems] = useState([]);
+  const [bottomItems, setBottomItems] = useState([]);
+
+  const { username } = useContext(AuthContext);
+  const [savedImages, setSavedImages] = useState([]);
+
+  const fetchSavedImg = () => {
+    if (!username) return;
+
+    fetch(`http://127.0.0.1:5000/get_saved_cloth/${username}`)
+      .then(res => res.json())
+      .then(json => {
+        const combined = [...(json.static || []), ...(json.uploaded || [])];
+        setSavedImages(combined);
+      })
+      .catch(console.log);
+  };
 
   useEffect(() => {
-    socket.on('receive_update', (data) => {
+    fetchSavedImg();
+  }, [username]);
+
+  useEffect(() => {
+    clothRef.current = cloth;
+  }, [cloth]);
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const res = await fetch(`https://virtual-tryon-backend-974u.onrender.com/transparent/list`);
+        let json = await res.json();
+        json = json.filter(item => !item.startsWith('.'));
+        
+        const result = [];
+
+        while (result.length < 9 && json.length > 0) {
+          const randomIndex = Math.floor(Math.random() * json.length);
+          const selected = `https://virtual-tryon-backend-974u.onrender.com/transparent_static/${json[randomIndex]}`;
+          console.log(json[randomIndex])
+          try {
+            const r = await fetch(selected);
+            const blob = await r.blob();
+            if (blob.type.startsWith("image/")) {
+              result.push(selected);
+            }
+          } catch {}
+
+          json.splice(randomIndex, 1);
+        }
+
+        setTopItems(result);
+      } catch (e) {
+        console.log(e);
+      }
+    };
+
+    run();
+  }, []);
+
+  useEffect(() => {
+    const handleUpdate = (data) => {
       const blob = new Blob([data], { type: "image/png" });
       const url = URL.createObjectURL(blob);
       setTestImg(url);
-    });
+    };
 
-    socket.on('reminder', () => tryonButton());
+    const handleReminder = () => tryonButton();
+
+    socket.on('receive_update', handleUpdate);
+    socket.on('reminder', handleReminder);
+
+    // Cleanup listeners when component unmounts
+    return () => {
+      socket.off('receive_update', handleUpdate);
+      socket.off('reminder', handleReminder);
+    };
   }, []);
 
   const handleCloth = (id, img) => {
-    setCloth(prev => ({ ...prev, [id]: img }));
+    setCloth((prev) => ({ ...prev, [id]: img }));
   };
 
   const tryonButton = () => {
-    setTryonState(true);
+    if (!webcamRef.current) return;
+
     const screenshot = webcamRef.current.getScreenshot();
-    if (clothRef.current['top']) {
-      fetch(clothRef.current['top'])
-      .then(res => res.blob())
-      .then(blob => blob.arrayBuffer())
-      .then(buffer => socket.emit('send_message', screenshot, buffer))
-      .catch(console.log);
-    } else if (clothRef.current['bottom']) {
-      fetch(clothRef.current['bottom'])
-      .then(res => res.blob())
-      .then(blob => blob.arrayBuffer())
-      .then(buffer => socket.emit('send_message', screenshot, buffer))
-      .catch(console.log);
+    if (!screenshot) return;
+
+    setTryonState(true);
+
+    if (clothRef.current.top) {
+      fetch(clothRef.current.top)
+        .then(res => res.blob())
+        .then(blob => blob.arrayBuffer())
+        .then(buffer => socket.emit('send_message', screenshot, buffer))
+        .catch(console.log);
     }
-    
   };
 
   const stopTryonButton = () => {
     setTryonState(false);
-    setTestImg(null)
+    setTestImg(null);
     socket.emit('stop_thread');
   };
 
-  return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 2rem)', gap: '8px', padding: '8px' }}>
+return (
+  <div
+    style={{
+      display: 'flex',
+      height: 'calc(100vh - 2rem)',
+      padding: '12px',
+      gap: '16px',
+      backgroundColor: '#f7f7f7',      // light app background
+    }}
+  >
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <Live webcamRef={webcamRef} image={testImg} style={{ flex: 1 }} />
-        {tryonState ? 
-          <button onClick={stopTryonButton}>Stop Try-On</button> :
-          <button onClick={tryonButton}>Start Try-On</button>
-        }
+    {/* LEFT — Live cam */}
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: '#ffffff',
+        borderRadius: '10px',
+        padding: '12px',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+      }}
+    >
+      <div style={{ flex: 1, display: "flex" }}>
+        <Live webcamRef={webcamRef} image={testImg} style={{ flex: 1, borderRadius: "6px" }} />
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      {/* Buttons */}
+      {tryonState ? (
+        <button
+          onClick={stopTryonButton}
+          style={{
+            marginTop: '12px',
+            backgroundColor: '#d9534f',
+            color: '#fff',
+            padding: '10px 16px',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: 500,
+          }}
+        >
+          Stop Try-On
+        </button>
+      ) : (
+        <button
+          onClick={tryonButton}
+          style={{
+            marginTop: '12px',
+            backgroundColor: '#4CAF50',
+            color: '#fff',
+            padding: '10px 16px',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: 500,
+          }}
+        >
+          Start Try-On
+        </button>
+      )}
+    </div>
+
+
+    {/* RIGHT — Clothes */}
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        overflowY: 'auto',
+        backgroundColor: '#ffffff',
+        borderRadius: '10px',
+        padding: '16px',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+      }}
+    >
+      {/* Toggle buttons */}
+      <div>
+        <button
+          onClick={() => setView("all")}
+          style={{
+            marginRight: '10px',
+            backgroundColor: view === 'all' ? '#006400' : '#ffffff',
+            color: view === 'all' ? '#fff' : '#006400',
+            padding: '8px 14px',
+            border: '1px solid #006400',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: 500,
+          }}
+        >
+          Clothes
+        </button>
+
+        <button
+          onClick={() => setView("favorites")}
+          style={{
+            backgroundColor: view === 'favorites' ? '#006400' : '#ffffff',
+            color: view === 'favorites' ? '#fff' : '#006400',
+            padding: '8px 14px',
+            border: '1px solid #006400',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: 500,
+          }}
+        >
+          Favorites
+        </button>
+      </div>
+
+      {/* Clothing list */}
+      {view === "all" ? (
         <Cloth
-          id='top'
+          id="top"
           num_cols={4}
           itemData={topItems}
-          handleSelection={(img) => handleCloth('top', img)}
+          handleSelection={(img) => handleCloth("top", img)}
           upload={true}
+          trigger={() => fetchSavedImg()}
         />
-      </div>
-
-      {/* <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      ) : savedImages.length > 0 && (
         <Cloth
-          id='bottom'
-          num_cols={2}
-          itemData={bottomItems}
-          handleSelection={(img) => handleCloth('bottom', img)}
-          upload={true}
+          id="top"
+          num_cols={4}
+          itemData={savedImages}
+          handleSelection={(img) => handleCloth("top", img)}
+          upload={false}
+          trigger={() => fetchSavedImg()}
         />
-      </div> */}
+      )}
     </div>
-  );
+  </div>
+);
 };
 
 export default TryOn;

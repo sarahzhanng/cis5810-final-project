@@ -1,163 +1,299 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { Button, Dropdown, DropdownButton } from "react-bootstrap";
 import Cloth from "./Cloth";
 import Slideshow from "./Slideshow";
 import ImageUpload from "./ImageUpload";
+import { AuthContext } from "./AuthContext";
 
-const clothing_url = 'https://virtual-tryon-backend-974u.onrender.com';
+const clothing_url = "https://virtual-tryon-backend-974u.onrender.com";
 
 const Suggestion = () => {
   const [metadata, setMetadata] = useState([]);
-  const [mode, setMode] = useState('tops');
+  const [mode, setMode] = useState("tops");
   const [cloth, setCloth] = useState(null);
   const [result, setResult] = useState(null);
 
-  useEffect(() => {
-    if (mode !== 'upload') {
-      fetch(`${clothing_url}/${mode}`)
-        .then(res => res.json())
-        .then(json => {
-          json = json.map(item => item.image_url);
-          const result = [];
-          while (result.length < 9 && json.length > 0) {
-            const randomIndex = Math.floor(Math.random() * json.length);
-            const selectedElement = clothing_url + json[randomIndex];
+  const { username } = useContext(AuthContext);
+  const [savedImages, setSavedImages] = useState([]);
 
-            // Wait for fetch result
-            const res = await fetch(selectedElement);
-            const blob = await res.blob();
-
-            // Only accept images (or whatever type you want)
-            if (blob.type.startsWith("image/")) {
-              result.push(selectedElement);
-            }
-
-            // Remove from json so we don't re-pick it
-            json.splice(randomIndex, 1);
-          }
-
-          setMetadata(result);
-        });
-    } else {
-      setMetadata(null);
+  const fetchSavedImg = () => {
+    if (username) {
+      fetch(`http://127.0.0.1:5000/get_saved_cloth/${username}`)
+        .then((res) => res.json())
+        .then((json) => {
+          setSavedImages((json.static || []).concat(json.uploaded || []));
+        })
+        .catch(console.log);
     }
+  };
+
+  useEffect(() => {
+    fetchSavedImg();
+  }, [username]);
+
+  useEffect(() => {
+    const run = async () => {
+      if (mode !== "upload" && mode !== "favorite") {
+        const res = await fetch(`${clothing_url}/${mode}`);
+        let json = await res.json();
+        json = json.map((item) => item.image_url);
+
+        const result = [];
+        while (result.length < 9 && json.length > 0) {
+          const i = Math.floor(Math.random() * json.length);
+          const url = clothing_url + json[i];
+
+          try {
+            const r = await fetch(url);
+            const blob = await r.blob();
+            if (blob.type.startsWith("image/")) result.push(url);
+          } catch {}
+
+          json.splice(i, 1);
+        }
+        setMetadata(result);
+      } else if (mode === "favorite") {
+        setMetadata(savedImages);
+      } else {
+        setMetadata(null);
+      }
+    };
+
+    run();
   }, [mode]);
 
-  const getSuggestion = (event) => {
-        // get suggestion using query + selected clothing
-        if (cloth != null) {
-            if (mode == 'top' || mode == 'tops') {
-                const data = {
-                    "top_id": cloth
-                }
-                fetch(`${clothing_url}/generate_looks_from_top`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                })
-                    .then(res => res.json())
-                    .then(json => {
-                        console.log(json)
-                        setResult(json)
-                    })
-            } else if (mode == 'bottom') {
-                const data = {
-                    "bottom_id": cloth
-                }
-                fetch(`${clothing_url}/generate_looks_from_bottom`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                })
-                    .then(res => res.json())
-                    .then(json => {
-                        console.log(json)
-                        setResult(json)
-                    })
-            } else {
-                fetch(cloth)
-                    .then(res => res.blob())
-                    .then(blob => {
-                        const file = new File([blob], 'image.png', {type: 'png'})
-                        const formData = new FormData()
-                        formData.append("file", file, "image.png")
-                        return fetch(`${clothing_url}/suggest_from_photo`, {
-                            method: 'POST',
-                            body: formData
-                        })
-                    })
-                    .then(res => res.json())
-                    .then(json => {
-                        console.log(json)
-                        setResult(json)
-                    })
+  const getSuggestion = () => {
+    if (!cloth) return;
 
-            }
-        }
+    const handlePhotoSuggestion = (fileBlob) => {
+      const file = new File([fileBlob], "image.png", { type: "png" });
+      const formData = new FormData();
+      formData.append("file", file);
+      fetch(`${clothing_url}/suggest_from_photo`, {
+        method: "POST",
+        body: formData,
+      })
+        .then((res) => res.json())
+        .then((json) => setResult(json));
+    };
+
+    if (mode === "tops" || mode === "top") {
+      fetch(`${clothing_url}/generate_looks_from_top`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ top_id: cloth }),
+      })
+        .then((res) => res.json())
+        .then((json) => setResult(json));
+    } else if (mode === "bottom" || mode === "bottoms") {
+      fetch(`${clothing_url}/generate_looks_from_bottom`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bottom_id: cloth }),
+      })
+        .then((res) => res.json())
+        .then((json) => setResult(json));
+    } else if (mode === "upload" || mode === "favorite") {
+      if (cloth.startsWith("http")) {
+        fetch(cloth)
+          .then((r) => r.blob())
+          .then(handlePhotoSuggestion);
+      } else {
+        const type = cloth.split(";")[0].substring(5);
+        const data = atob(cloth.split(",")[1]);
+        const array = Uint8Array.from(data, (c) => c.charCodeAt(0));
+        handlePhotoSuggestion(new Blob([array], { type }));
+      }
     }
+  };
 
   return (
-    <div className="container-fluid my-4" style={{ height: "calc(100vh - 2rem)" }}>
-      <div className="row h-100 gx-4">
-
-        {/* Left half */}
-        <div className="col-12 col-md-6 d-flex flex-column h-100">
-          <div className="mb-3 d-flex justify-content-start">
-            <DropdownButton title="Options" variant="success">
-              <Dropdown.Item onClick={() => setMode('tops')}>Top</Dropdown.Item>
-              <Dropdown.Item onClick={() => setMode('bottoms')}>Bottom</Dropdown.Item>
-              <Dropdown.Item onClick={() => setMode('upload')}>Upload</Dropdown.Item>
+    <div
+      style={{
+        height: "calc(100vh - 2rem)",
+        padding: "16px",
+        backgroundColor: "#f9f9f9",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          gap: "16px",
+          height: "100%",
+        }}
+      >
+        {/* LEFT PANEL */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            background: "#fff",
+            borderRadius: "10px",
+            padding: "16px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+            overflow: "hidden",
+          }}
+        >
+          <div style={{ marginBottom: "12px" }}>
+            <DropdownButton title="Options" variant="light">
+              <Dropdown.Item onClick={() => setMode("tops")}>Top</Dropdown.Item>
+              <Dropdown.Item onClick={() => setMode("bottoms")}>
+                Bottom
+              </Dropdown.Item>
+              <Dropdown.Item onClick={() => setMode("upload")}>
+                Upload
+              </Dropdown.Item>
+              {username && 
+              <Dropdown.Item onClick={() => setMode("favorite")}>
+                Favorites
+              </Dropdown.Item>
+              }
             </DropdownButton>
           </div>
 
-          <div className="flex-fill d-flex">
+          <div
+            style={{
+              flex: 1,
+              overflow: "auto",
+              borderRadius: "8px",
+            }}
+          >
             {metadata ? (
-              <Cloth
-                itemData={metadata}
-                num_cols={3}
-                handleSelection={(img) => {
-                  img = img.substring((clothing_url + '/static/').length, img.length - 4);
-                  setCloth(img);
-                }}
-                upload={false}
-              />
+              mode === "favorite" ? (
+                <Cloth
+                  itemData={metadata}
+                  num_cols={3}
+                  handleSelection={setCloth}
+                  upload={false}
+                  trigger={fetchSavedImg}
+                />
+              ) : mode === "upload" ? (
+                <div
+                  style={{
+                    padding: "16px",
+                    border: "2px dashed #ccc",
+                    borderRadius: "10px",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100%",
+                    background: "#fafafa",
+                  }}
+                >
+                  <ImageUpload handleUpload={(img) => setCloth(img)} />
+                </div>
+              ) : (
+                <Cloth
+                  itemData={metadata}
+                  num_cols={3}
+                  handleSelection={(img) =>
+                    setCloth(
+                      img.substring(
+                        (clothing_url + "/static/").length,
+                        img.length - 4
+                      )
+                    )
+                  }
+                  upload={false}
+                />
+              )
             ) : (
-              <div className="border p-3 rounded w-100 d-flex justify-content-center align-items-center">
+              <div
+                style={{
+                  height: "100%",
+                  border: "2px dashed #ccc",
+                  borderRadius: "10px",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  background: "#fafafa",
+                }}
+              >
                 <ImageUpload handleUpload={(img) => setCloth(img)} />
               </div>
             )}
           </div>
         </div>
 
-        {/* Right half */}
-        <div className="col-12 col-md-6 d-flex flex-column h-100">
-          <div className="mb-3">
-            <Button variant="primary" onClick={getSuggestion} className="w-100">
-              Get Suggestion
-            </Button>
-          </div>
+        {/* RIGHT PANEL — SUGGESTIONS */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            background: "#fff",
+            borderRadius: "10px",
+            padding: "16px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+            overflow: "hidden",
+          }}
+        >
+          <Button
+            variant="success"
+            onClick={getSuggestion}
+            style={{
+              width: "100%",
+              marginBottom: "12px",
+              padding: "10px",
+              fontSize: "1rem",
+            }}
+          >
+            Get Suggestion
+          </Button>
 
-          {result && (
-            <div className="flex-fill d-flex flex-column">
-              
-              <div className="flex-fill">
+          {result ? (
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+              }}
+            >
+              <div style={{ flex: 1, minHeight: 0 }}>
                 <Slideshow
-                  images={result.looks.map(
-                    (item) => `${clothing_url}${item.bottom.image_url}`
-                  )}
+                  trigger={() => fetchSavedImg()}
+                  images={result.looks.map((item) => {
+                    if (item.top) return `${clothing_url}${item.top.image_url}`;
+                    if (item.bottom)
+                      return `${clothing_url}${item.bottom.image_url}`;
+                    if (item.item)
+                      return `${clothing_url}${item.item.image_url}`;
+                    return null;
+                  })}
                 />
               </div>
-              <div className="mb-2 p-2 bg-light border rounded">
+
+              <div
+                style={{
+                  marginTop: "12px",
+                  padding: "12px",
+                  background: "#f7f7f7",
+                  borderRadius: "8px",
+                  maxHeight: "120px",
+                  overflowY: "auto",
+                  fontSize: "0.9rem",
+                }}
+              >
                 <strong>Explanation:</strong> {result.explanation}
               </div>
             </div>
+          ) : (
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                color: "#777",
+                fontSize: "0.9rem",
+              }}
+            >
+              No suggestions yet — choose an item!
+            </div>
           )}
         </div>
-
       </div>
     </div>
   );

@@ -1,40 +1,98 @@
 import { Button } from "react-bootstrap";
-import { useState } from "react";
+import { useState, useContext, useEffect } from "react";
+import { AuthContext } from "./AuthContext";
+import { Heart, HeartFill } from "react-bootstrap-icons";
 
-const Slideshow = ({ images = [] }) => {
+const Slideshow = ({ images = [], trigger }) => {
   const [index, setIndex] = useState(0);
+  const { username } = useContext(AuthContext);
+  const [savedImages, setSavedImages] = useState([]);
+
+  const fetchSavedImages = () => {
+    if (!username) return;
+    fetch(`http://127.0.0.1:5000/get_saved_cloth/${username}`)
+      .then((res) => res.json())
+      .then((json) => {
+        setSavedImages([...(json.static || []), ...(json.uploaded || [])]);
+      })
+      .catch(console.log);
+  };
+
+  useEffect(() => {
+    fetchSavedImages();
+  }, [username]);
 
   if (!images || images.length === 0) return null;
 
   const nextSlide = () => setIndex((prev) => (prev + 1) % images.length);
   const prevSlide = () => setIndex((prev) => (prev - 1 + images.length) % images.length);
 
+  const currentImage = images[index];
+
+  const toggleFavorite = (img) => {
+    if (!username) return;
+
+    const isSaved = savedImages.includes(img);
+    const endpoint = isSaved ? "remove_cloth" : "save_cloth";
+    const method = isSaved ? "DELETE" : "POST";
+
+    fetch(`http://127.0.0.1:5000/${endpoint}`, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, cloth: img, uploaded: "F" }),
+    })
+      .then((res) => res.json())
+      .then(() => {
+        fetchSavedImages()
+        trigger()
+      })
+      .catch(console.log);
+  };
+
   return (
     <div
-      className="position-relative d-flex justify-content-center align-items-center border rounded overflow-hidden"
-      style={{ height: "100%", width: "100%", backgroundColor: "#f8f9fa" }}
+      style={{
+        position: "relative",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        width: "100%",
+        height: "100%",
+        borderRadius: "12px",
+        overflow: "hidden",
+        backgroundColor: "#fff",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+      }}
     >
       <img
-        src={images[index]}
+        src={currentImage}
         alt={`Slide ${index + 1}`}
         style={{
-          height: "100%",
           width: "100%",
+          height: "100%",
           objectFit: "contain",
         }}
       />
 
       {/* Previous Button */}
       <Button
-        variant="dark"
         onClick={prevSlide}
-        className="position-absolute top-50 start-0 translate-middle-y"
         style={{
+          position: "absolute",
+          top: "50%",
+          left: "10px",
+          transform: "translateY(-50%)",
           width: "40px",
           height: "40px",
-          opacity: 0.7,
           borderRadius: "50%",
+          backgroundColor: "rgba(0,0,0,0.5)",
+          border: "none",
+          color: "#fff",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
           padding: 0,
+          fontWeight: "bold",
         }}
       >
         &lt;
@@ -42,30 +100,82 @@ const Slideshow = ({ images = [] }) => {
 
       {/* Next Button */}
       <Button
-        variant="dark"
         onClick={nextSlide}
-        className="position-absolute top-50 end-0 translate-middle-y"
         style={{
+          position: "absolute",
+          top: "50%",
+          right: "10px",
+          transform: "translateY(-50%)",
           width: "40px",
           height: "40px",
-          opacity: 0.7,
           borderRadius: "50%",
+          backgroundColor: "rgba(0,0,0,0.5)",
+          border: "none",
+          color: "#fff",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
           padding: 0,
+          fontWeight: "bold",
         }}
       >
         &gt;
       </Button>
 
-      {/* Slide Indicators
-      <div className="position-absolute bottom-0 w-100 text-center mb-2">
+      {/* Favorite Button */}
+      {username && (
+        <Button
+          onClick={() => toggleFavorite(currentImage)}
+          style={{
+            position: "absolute",
+            top: "10px",
+            right: "10px",
+            width: "36px",
+            height: "36px",
+            borderRadius: "50%",
+            backgroundColor: savedImages.includes(currentImage) ? "red" : "rgba(0,0,0,0.3)",
+            border: "none",
+            color: "#fff",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 0,
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.backgroundColor = savedImages.includes(currentImage) ? "darkred" : "rgba(0,0,0,0.6)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.backgroundColor = savedImages.includes(currentImage) ? "red" : "rgba(0,0,0,0.3)")
+          }
+        >
+          {savedImages.includes(currentImage) ? <HeartFill size={18} /> : <Heart size={18} />}
+        </Button>
+      )}
+
+      {/* Slide Indicators */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "10px",
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          gap: "6px",
+        }}
+      >
         {images.map((_, i) => (
-          <span
+          <div
             key={i}
-            className={`mx-1 rounded-circle ${i === index ? "bg-dark" : "bg-secondary"}`}
-            style={{ display: "inline-block", width: "10px", height: "10px" }}
+            style={{
+              width: "10px",
+              height: "10px",
+              borderRadius: "50%",
+              backgroundColor: i === index ? "#4CAF50" : "#ccc",
+              transition: "background-color 0.3s",
+            }}
           />
         ))}
-      </div> */}
+      </div>
     </div>
   );
 };

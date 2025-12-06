@@ -79,12 +79,14 @@ def me():
 @app.route('/save_cloth', methods=['POST'])
 def save_cloth():
     data = request.json
+    
     username = data['username']
     cloth = data['cloth']
+    uploaded = data['uploaded']
 
     users_collection.update_many(
         {'username': username},
-        {'$push': {'saved': cloth}}
+        {'$addToSet': {'saved': {'cloth': cloth, 'uploaded': uploaded}}}
     )
 
     return jsonify({'message': 'Cloth saved'}), 201
@@ -95,18 +97,28 @@ def remove_cloth():
     username = data['username']
     cloth = data['cloth']
 
-    users_collection.update_many(
+    users_collection.update_one(
         {'username': username},
-        {'$pull': {'saved': cloth}}
+        {'$pull': {'saved': {'cloth': cloth}}}
     )
 
     return jsonify({'message': 'Cloth removed'}), 201
 
 @app.route('/get_saved_cloth/<username>')
 def get_saved_cloth(username):
-    user = users_collection.find_one(({'username': username}))
+    user_doc = users_collection.find_one(
+        {'username': username},
+        {'_id': 0, 'saved': 1, 'username': 1}
+    )
     
-    return jsonify({'result': user['saved']}), 201
+    if not user_doc:
+        return jsonify({'uploaded': [], 'base64': []}), 200
+
+    uploaded = [img['cloth'] for img in user_doc['saved'] if img.get('uploaded') == 'T']
+    base64 = [img['cloth'] for img in user_doc['saved'] if img.get('uploaded') == 'F']
+
+    return jsonify({'uploaded': uploaded, 'static': base64}), 201
+
 
 # SocketIO event
 clients = {}
@@ -162,9 +174,11 @@ def background_thread(sid, stop_event):
         socketio.emit('reminder', to=sid)
         count += 1
         socketio.sleep(5)
+    
+    print('terminating')
 
 # threading.Thread(target=background_thread, daemon=True).start()
 
 if __name__ == '__main__':
-    socketio.run(app)
+    socketio.run(app, debug=True)
 

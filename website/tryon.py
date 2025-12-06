@@ -4,7 +4,6 @@ import time
 from collections import deque
 from detector import ClothDetector
 
-
 class TryOnServer:
 
     def __init__(
@@ -212,6 +211,7 @@ class TryOnServer:
             # if self.cloth_image is None:
             #     raise ValueError(f"Could not load cloth image: {cloth_path}")
             self.cloth_image = cloth
+
             
             # print(f"Loaded garment: {self.cloth_image.shape}")
             
@@ -264,7 +264,7 @@ class TryOnServer:
             #     cv2.imwrite(filename, result)
             #     print(f"Screenshot saved: {filename}")
             
-            frame_count += 1
+            # frame_count += 1
             
             # # Maintain target FPS
             # target_frame_time = 1.0 / self.target_fps
