@@ -137,7 +137,7 @@ def handle_message(img, cloth):
     frame_cv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
     clotharr = np.frombuffer(cloth, np.uint8)
-    cloth_cv = cv2.imdecode(clotharr, cv2.IMREAD_COLOR)
+    cloth_cv = cv2.imdecode(clotharr, cv2.IMREAD_UNCHANGED)
 
     # one-time loop of RealtimeTryOn
     output = tryon.run(frame_cv, cloth_cv)
@@ -149,33 +149,30 @@ def handle_message(img, cloth):
 
     if sid not in clients or not clients[sid]['running']:
         print('here?')
-        stop_event = threading.Event()
-        clients[sid] = {'running': True, 'stop_event': stop_event}
-        t = threading.Thread(target=background_thread, args=(sid, stop_event), daemon=True)
+        clients[sid] = {'running': True}
+        # Use socketio.start_background_task instead of threading.Thread for compatibility
+        t = socketio.start_background_task(background_thread, sid)
         clients[sid]['thread'] = t
-        t.start()
 
 
 @socketio.on("stop_thread")
 def stop_thread():
     sid = request.sid
     if sid in clients:
-        print(sid, 'stopppppppppppppppppppppppppppppppppppppppppppppppppppppppppping')
+        print(sid, 'stopping background task')
         clients[sid]['running'] = False
-        clients[sid]['stop_event'].set()
-        # clients[sid]['thread']
         socketio.emit('receive_message', {'message': 'Stopped'}, to=sid)
 
 # Background task to broadcast messages
-def background_thread(sid, stop_event):
+def background_thread(sid):
     count = 0
-    while not stop_event.is_set():
+    while sid in clients and clients[sid]['running']:
         print('background thread loop start')
         socketio.emit('reminder', to=sid)
         count += 1
         socketio.sleep(5)
-    
-    print('terminating')
+
+    print('terminating background task')
 
 # threading.Thread(target=background_thread, daemon=True).start()
 

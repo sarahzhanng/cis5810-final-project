@@ -24,7 +24,7 @@ class TryOnServer:
         
         # Initialize detector
         # print(f"Initializing ClothDetector on {device}...")
-        self.detector = ClothDetector(device=device, debug=False)
+        self.detector = ClothDetector(device=device, debug=True)
         # print("ClothDetector initialized successfully!")
         
         # # Load cloth image
@@ -170,26 +170,14 @@ class TryOnServer:
     
     def run(self, frame, cloth):
         """Run the real-time try-on loop."""
-        # if not self._init_camera():
-        #     return
-        
-        # print("\n" + "="*60)
-        # print("Real-Time Virtual Try-On")
-        # print("="*60)
-        # print("\nControls:")
-        # print("  SPACE - Toggle original/try-on view")
-        # print("  K     - Toggle keypoints overlay")
-        # print("  P     - Pause/unpause")
-        # print("  S     - Take screenshot")
-        # print("  Q/ESC - Quit")
-        # print("\n" + "="*60 + "\n")
-        
-        # cv2.namedWindow('Virtual Try-On', cv2.WINDOW_NORMAL)
-        # cv2.resizeWindow('Virtual Try-On', self.display_width, self.display_height)
-        
+        import time as time_module
+        print(f"\n[{time_module.strftime('%H:%M:%S')}] TryOnServer.run() called")
+        print(f"  Frame shape: {frame.shape if frame is not None else 'None'}")
+        print(f"  Cloth shape: {cloth.shape if cloth is not None else 'None'}")
+
         frame_count = 0
         last_frame = None
-        
+
         try:
             loop_start = time.time()
             
@@ -223,7 +211,10 @@ class TryOnServer:
             # print("Cloth keypoints detected!")
             
             # Process frame
+            print(f"  Starting _process_frame...")
             result, proc_time = self._process_frame(frame, cloth)
+            print(f"  _process_frame completed in {proc_time*1000:.1f}ms")
+            print(f"  Result shape: {result.shape if result is not None else 'None'}")
             self.frame_times.append(proc_time)
             
             # # Calculate FPS
@@ -234,13 +225,25 @@ class TryOnServer:
             
             # # Draw UI
             display_frame = self._draw_ui(
-                result, 
-                # avg_fps, 
+                result,
+                # avg_fps,
                 # proc_time
             )
-            
-            cv2.imshow('Virtual Try-On', display_frame)
-            cv2.imwrite('saved_frame.png', display_frame)
+
+            # Try to show window (may fail if running headless/server)
+            try:
+                cv2.imshow('Virtual Try-On', display_frame)
+            except Exception as imshow_error:
+                # Ignore display errors when running as server (headless mode)
+                print(f"  [INFO] cv2.imshow failed (expected in server mode): {imshow_error}")
+
+            # Save with timestamp to verify updates
+            import os
+            import time as time_module
+            save_path = os.path.join(os.path.dirname(__file__), 'saved_frame.png')
+            success = cv2.imwrite(save_path, display_frame)
+            timestamp = time_module.strftime("%Y-%m-%d %H:%M:%S")
+            print(f"[{timestamp}] Saved frame to: {save_path} - Success: {success}")
 
             return display_frame
             
@@ -274,6 +277,11 @@ class TryOnServer:
                 
         except KeyboardInterrupt:
             print("\nInterrupted by user")
+        except Exception as e:
+            print(f"\n[ERROR] Exception in TryOnServer.run(): {e}")
+            import traceback
+            traceback.print_exc()
+            return frame  # Return original frame on error
         
         # finally:
         #     # Cleanup

@@ -28,9 +28,9 @@ class RealtimeTryOn:
         self.detector = ClothDetector(device=device, debug=False)
         print("ClothDetector initialized successfully!")
         
-        # Load cloth image
+        # Load cloth image with alpha channel preserved
         print(f"Loading cloth image from: {cloth_path}")
-        self.cloth_image = cv2.imread(cloth_path)
+        self.cloth_image = cv2.imread(cloth_path, cv2.IMREAD_UNCHANGED)
         if self.cloth_image is None:
             raise ValueError(f"Could not load cloth image: {cloth_path}")
         
@@ -155,17 +155,17 @@ class RealtimeTryOn:
     
     def change_garment(self, new_cloth_path: str) -> bool:
         """Change the garment being tried on."""
-        new_cloth = cv2.imread(new_cloth_path)
+        new_cloth = cv2.imread(new_cloth_path, cv2.IMREAD_UNCHANGED)
         if new_cloth is None:
             print(f"Could not load new garment: {new_cloth_path}")
             return False
-        
+
         self.cloth_image = new_cloth
         self.cloth_keypoints, self.cloth_mask = self.detector.detect_cloth_keypoints(
             new_cloth
         )
         self.cloth_path = new_cloth_path
-        
+
         print(f"Changed garment to: {new_cloth_path}")
         return True
     
