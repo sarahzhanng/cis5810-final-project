@@ -126,9 +126,6 @@ clients = {}
 @socketio.on('send_message')
 def handle_message(img, cloth):
     sid = request.sid
-    print(sid)
-
-    # print(cloth)
 
     if img.startswith("data:"):
         img = img.split(",")[1]
@@ -144,8 +141,6 @@ def handle_message(img, cloth):
 
     _, buffer = cv2.imencode('.png', output)
     socketio.emit('receive_update', buffer.tobytes())
-
-    print('completed')
 
     if sid not in clients or not clients[sid]['running']:
         print('here?')

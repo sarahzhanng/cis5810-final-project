@@ -24,7 +24,7 @@ class TryOnServer:
         
         # Initialize detector
         # print(f"Initializing ClothDetector on {device}...")
-        self.detector = ClothDetector(device=device, debug=True)
+        self.detector = ClothDetector(device=device, debug=False)
         # print("ClothDetector initialized successfully!")
         
         # # Load cloth image
@@ -171,9 +171,9 @@ class TryOnServer:
     def run(self, frame, cloth):
         """Run the real-time try-on loop."""
         import time as time_module
-        print(f"\n[{time_module.strftime('%H:%M:%S')}] TryOnServer.run() called")
-        print(f"  Frame shape: {frame.shape if frame is not None else 'None'}")
-        print(f"  Cloth shape: {cloth.shape if cloth is not None else 'None'}")
+        # print(f"\n[{time_module.strftime('%H:%M:%S')}] TryOnServer.run() called")
+        # print(f"  Frame shape: {frame.shape if frame is not None else 'None'}")
+        # print(f"  Cloth shape: {cloth.shape if cloth is not None else 'None'}")
 
         frame_count = 0
         last_frame = None
@@ -238,12 +238,12 @@ class TryOnServer:
                 print(f"  [INFO] cv2.imshow failed (expected in server mode): {imshow_error}")
 
             # Save with timestamp to verify updates
-            import os
-            import time as time_module
-            save_path = os.path.join(os.path.dirname(__file__), 'saved_frame.png')
-            success = cv2.imwrite(save_path, display_frame)
-            timestamp = time_module.strftime("%Y-%m-%d %H:%M:%S")
-            print(f"[{timestamp}] Saved frame to: {save_path} - Success: {success}")
+            # import os
+            # import time as time_module
+            # save_path = os.path.join(os.path.dirname(__file__), 'saved_frame.png')
+            # success = cv2.imwrite(save_path, display_frame)
+            # timestamp = time_module.strftime("%Y-%m-%d %H:%M:%S")
+            # print(f"[{timestamp}] Saved frame to: {save_path} - Success: {success}")
 
             return display_frame
             

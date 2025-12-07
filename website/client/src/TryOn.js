@@ -73,24 +73,34 @@ const TryOn = () => {
     run();
   }, []);
 
-  useEffect(() => {
-    const handleUpdate = (data) => {
-      const blob = new Blob([data], { type: "image/png" });
-      const url = URL.createObjectURL(blob);
-      setTestImg(url);
-    };
+  const tryonStateRef = useRef(false);
 
-    const handleReminder = () => tryonButton();
+useEffect(() => {
+  tryonStateRef.current = tryonState;
+}, [tryonState]);
 
-    socket.on('receive_update', handleUpdate);
-    socket.on('reminder', handleReminder);
+useEffect(() => {
+  const handleUpdate = (data) => {
+    const blob = new Blob([data], { type: "image/png" });
+    const url = URL.createObjectURL(blob);
+    setTestImg(url);
+  };
 
-    // Cleanup listeners when component unmounts
-    return () => {
-      socket.off('receive_update', handleUpdate);
-      socket.off('reminder', handleReminder);
-    };
-  }, []);
+  const handleReminder = () => {
+    if (tryonStateRef.current) {
+      tryonButton();
+    }
+  };
+
+  socket.on('receive_update', handleUpdate);
+  socket.on('reminder', handleReminder);
+
+  return () => {
+    socket.off('receive_update', handleUpdate);
+    socket.off('reminder', handleReminder);
+  };
+}, []);
+
 
   const handleCloth = (id, img) => {
     setCloth((prev) => ({ ...prev, [id]: img }));
@@ -103,6 +113,7 @@ const TryOn = () => {
     if (!screenshot) return;
 
     setTryonState(true);
+    tryonStateRef.current = true
 
     if (clothRef.current.top) {
       fetch(clothRef.current.top)
@@ -114,10 +125,12 @@ const TryOn = () => {
   };
 
   const stopTryonButton = () => {
-    setTryonState(false);
-    setTestImg(null);
-    socket.emit('stop_thread');
-  };
+  setTryonState(false);
+  tryonStateRef.current = false;
+  setTestImg(null);
+  socket.emit('stop_thread');
+};
+
 
 return (
   <div
