@@ -34,7 +34,8 @@ def sign_up():
     users_collection.insert_one({
         'username': data['username'],
         'password': data['password'],
-        'saved': []
+        'saved': [],
+        'capture': []
     })
     return jsonify({'message': 'Signup Successful'}), 201
 
@@ -91,6 +92,19 @@ def save_cloth():
 
     return jsonify({'message': 'Cloth saved'}), 201
 
+@app.route('/save_capture', methods=['POST'])
+def save_capture():
+    data = request.json
+    username = data['username']
+    capture = data['img']
+
+    users_collection.update_many(
+        {'username': username},
+        {'$push': {'capture': capture}}
+    )
+
+    return jsonify({'message': 'Capture saved'}), 201
+
 @app.route('/remove_cloth', methods=['DELETE'])
 def remove_cloth():
     data = request.json
@@ -103,6 +117,20 @@ def remove_cloth():
     )
 
     return jsonify({'message': 'Cloth removed'}), 201
+
+@app.route('/remove_capture', methods=['DELETE'])
+def remove_capture():
+    data = request.json
+    username = data['username']
+    capture = data['img']
+
+    users_collection.update_one(
+        {'username': username},
+        {'$pull': {'capture': capture}}
+    )
+
+    return jsonify({'message': 'Capture removed'}), 201
+
 
 @app.route('/get_saved_cloth/<username>')
 def get_saved_cloth(username):
@@ -118,6 +146,18 @@ def get_saved_cloth(username):
     base64 = [img['cloth'] for img in user_doc['saved'] if img.get('uploaded') == 'F']
 
     return jsonify({'uploaded': uploaded, 'static': base64}), 201
+
+@app.route('/get_saved_capture/<username>')
+def get_saved_capture(username):
+    user_doc = users_collection.find_one(
+        {'username': username},
+        {'_id': 0, 'capture': 1, 'username': 1}
+    )
+    
+    if not user_doc:
+        return jsonify({'uploaded': [], 'base64': []}), 200
+
+    return jsonify({'result': list(user_doc['capture']),}), 201
 
 
 # SocketIO event

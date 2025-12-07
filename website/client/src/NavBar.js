@@ -81,12 +81,35 @@ export default function NavBar() {
           <ul className="navbar-nav ms-auto align-items-center">
             {username ? (
               <>
-                <li
+                <li className="nav-item me-2">
+                  <a
+                    className="btn"
+                    href="/account"
+                    style={{
+                      borderRadius: "6px",
+                      border: "1px solid #4CAF50",
+                      color: "#4CAF50",
+                      padding: "6px 16px",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.backgroundColor = "#4CAF50";
+                      e.target.style.color = "#fff";
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.backgroundColor = "#FFFFFF";
+                      e.target.style.color = "#4CAF50";
+                    }}
+                  >
+                    {username}
+                  </a>
+                </li>
+                {/* <li
                   className="nav-item me-3"
                   style={{ color: "#333", fontWeight: "bold" }}
                 >
                   {username}
-                </li>
+                </li> */}
 
                 <li className="nav-item">
                   <button

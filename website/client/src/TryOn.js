@@ -6,6 +6,19 @@ import { io } from "socket.io-client";
 
 const socket = io('http://127.0.0.1:5000', { autoConnect: true });
 
+const buttonStyle = (bg) => ({
+  flex: 1,
+  backgroundColor: bg,
+  color: "#fff",
+  padding: "12px 0",
+  border: "none",
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontWeight: 600,
+  fontSize: "16px",
+});
+
+
 const TryOn = () => {
   const webcamRef = useRef(null);
   const [testImg, setTestImg] = useState(null);
@@ -19,6 +32,8 @@ const TryOn = () => {
 
   const { username } = useContext(AuthContext);
   const [savedImages, setSavedImages] = useState([]);
+
+  const [captureMode, setCaptureMode] = useState(false)
 
   const fetchSavedImg = () => {
     if (!username) return;
@@ -79,6 +94,7 @@ useEffect(() => {
   tryonStateRef.current = tryonState;
 }, [tryonState]);
 
+
 useEffect(() => {
   const handleUpdate = (data) => {
     const blob = new Blob([data], { type: "image/png" });
@@ -131,6 +147,46 @@ useEffect(() => {
   socket.emit('stop_thread');
 };
 
+const startCaptureMode = () => {
+  if (tryonState) {
+    console.log('stopping thread')
+    setTryonState(false)
+    tryonStateRef.current = false;
+    socket.emit("stop_thread")
+    setCaptureMode(true);
+  } else {
+    const img = webcamRef.current.getScreenshot();
+    setTestImg(img);
+    setCaptureMode(true);
+  }
+};
+
+const cancelCaptureMode = () => {
+  setCaptureMode(false);
+  setTestImg(null);
+};
+
+const saveCapturedImage = () => {
+  // console.log("Saving image:", testImg);
+  setCaptureMode(false);
+  setTryonState(false)
+  tryonStateRef.current = false;
+
+  fetch(testImg)
+    .then(r => r.blob())
+    .then(blob => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        fetch(`http://127.0.0.1:5000/save_capture`, {
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+          body: JSON.stringify({ username, 'img': reader.result }),
+        });
+      };
+      reader.readAsDataURL(blob);
+      setTestImg(null)
+    })
+};
 
 return (
   <div
@@ -159,40 +215,76 @@ return (
         <Live webcamRef={webcamRef} image={testImg} style={{ flex: 1, borderRadius: "6px" }} />
       </div>
 
-      {/* Buttons */}
+{/* Buttons */}
+<div
+  style={{
+    display: "flex",
+    gap: "6px",
+    marginTop: "12px",
+  }}
+>
+  {captureMode ? (
+    <>
+      {/* CANCEL button */}
+      <button
+        onClick={cancelCaptureMode}
+        style={buttonStyle("#d9534f")}
+      >
+        Cancel
+      </button>
+
+      {username && (
+  <button
+    onClick={saveCapturedImage}
+    style={{
+      flex: 1,
+      backgroundColor: "#28a745",
+      color: "#fff",
+      padding: "12px 0",
+      border: "none",
+      borderRadius: "6px",
+      cursor: "pointer",
+      fontWeight: 600,
+      fontSize: "16px"
+    }}
+  >
+    Save
+  </button>
+)}
+    </>
+  ) : (
+    <>
+      {/* Start / Stop Try-On */}
       {tryonState ? (
         <button
           onClick={stopTryonButton}
-          style={{
-            marginTop: '12px',
-            backgroundColor: '#d9534f',
-            color: '#fff',
-            padding: '10px 16px',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontWeight: 500,
-          }}
+          style={buttonStyle("#d9534f")}
         >
           Stop Try-On
         </button>
       ) : (
         <button
           onClick={tryonButton}
-          style={{
-            marginTop: '12px',
-            backgroundColor: '#4CAF50',
-            color: '#fff',
-            padding: '10px 16px',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontWeight: 500,
-          }}
+          style={buttonStyle("#4CAF50")}
         >
           Start Try-On
         </button>
       )}
+
+      {/* Capture button */}
+      <button
+        onClick={() => {
+          console.log('here')
+          startCaptureMode()
+        }}
+        style={buttonStyle("#0066cc")}
+      >
+        Capture
+      </button>
+    </>
+  )}
+</div>
+
     </div>
 
 
